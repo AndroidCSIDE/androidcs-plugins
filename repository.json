@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "name": "Official ACS Plugin Repository",
+  "plugins": [
+    {
+      "id": "com.example.testutils",
+      "name": "FlutterTemplate",
+      "displayName": "Flutter Template",
+      "description": "Basic flutter activity",
+      "category": "Development Tools",
+      "author": "ACS Team",
+      "homepage": "https://github.com/AndroidCSIDE/androidcs-plugins/official/FlutterTemplate",
+      "iconUrl": "https://github.com/AndroidCSIDE/androidcs-plugins/official/FlutterTemplate/main/meta/icon.png",
+      "latestVersion": "1.0.0",
+      "minAcsVersion": "1.0.0",
+      "downloadUrl": "https://example.com/plugins/testutils-1.2.0.acp",
+      "checksum": "9129e71f0da6b485ebb14569ca6f321275099e9e62f695996d78d02853a05afa",
+      "size": 524288,
+      "lastUpdated": "2026-02-25 14:32:49",
+      "tags": ["templates", "utilities", "development"]
+    }
+  ]
+}

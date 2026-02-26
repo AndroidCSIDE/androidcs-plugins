@@ -1,0 +1,9 @@
+{
+  "name": "FlutterTemplate",
+  "displayName": "Flutter Template Plugin",
+  "description": "Provides Flutter template for Android Code Studio",
+  "version": "1.0",
+  "author": "ACS Developer",
+  "icon": "icon.png",
+  "enabled": true
+}
