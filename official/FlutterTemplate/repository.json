@@ -6,7 +6,7 @@
   "category": "Development Tools",
   "author": "ACS Developer",
   "homepage": "https://github.com/AndroidCSIDE/androidcs-plugins/tree/main/official/FlutterTemplate",
-  "iconUrl": "https://raw.githubusercontent.com/AndroidCSIDE/androidcs-plugins/refs/heads/main/official/FlutterTemplate/meta/icon.png",
+  "iconUrl": "https://raw.githubusercontent.com/AndroidCSIDE/androidcs-plugins/refs/heads/main/official/FlutterTemplate/main/meta/icon.png",
   "latestVersion": "1.0.1",
   "minAcsVersion": "1.0.0",
   "downloadUrl": "https://github.com/AndroidCSIDE/androidcs-plugins/raw/refs/heads/main/official/FlutterTemplate/FlutterTemplate.acp",
