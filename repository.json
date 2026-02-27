@@ -1,23 +1,12 @@
 {
   "version": 1,
   "name": "Official ACS Plugin Repository",
+  "description": "The official repository for Android Code Studio plugins",
   "plugins": [
     {
       "id": "io.github.nullij.plugins.templates.flutter",
       "name": "FlutterTemplate",
-      "displayName": "Flutter Template",
-      "description": "Basic flutter activity",
-      "category": "Development Tools",
-      "author": "ACS Developer",
-      "homepage": "https://github.com/AndroidCSIDE/androidcs-plugins/official/FlutterTemplate",
-      "iconUrl": "https://raw.githubusercontent.com/AndroidCSIDE/androidcs-plugins/refs/heads/main/official/FlutterTemplate/main/meta/icon.png",
-      "latestVersion": "1.0.1",
-      "minAcsVersion": "1.0.0",
-      "downloadUrl": "https://github.com/AndroidCSIDE/androidcs-plugins/raw/refs/heads/main/official/FlutterTemplate/FlutterTemplate.acp",
-      "checksum": "9129e71f0da6b485ebb14569ca6f321275099e9e62f695996d78d02853a05afa",
-      "size": 12214025,
-      "lastUpdated": "2026-02-25 14:32:49",
-      "tags": ["templates", "utilities", "development"]
+      "pluginRepository": "https://raw.githubusercontent.com/AndroidCSIDE/androidcs-plugins/refs/heads/main/official/FlutterTemplate/repository.json"
     }
   ]
 }
