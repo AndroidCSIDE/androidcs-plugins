@@ -1,0 +1,17 @@
+{
+  "id": "io.github.nullij.plugins.lsp",
+  "name": "BashLanguageServer",
+  "displayName": "Bash language server",
+  "description": "Registers and starts the Bash language server for code intelligence in shell scripts files",
+  "category": "Development Tools",
+  "author": "ACS Developer",
+  "homepage": "https://github.com/AndroidCSIDE/androidcs-plugins/tree/main/official/BashLanguageServer",
+  "iconUrl": "https://raw.githubusercontent.com/AndroidCSIDE/androidcs-plugins/refs/heads/main/official/BashLanguageServer/main/meta/icon.png",
+  "latestVersion": "1.0.0",
+  "minAcsVersion": "1.0.0",
+  "downloadUrl": "https://github.com/AndroidCSIDE/androidcs-plugins/raw/refs/heads/main/official/BashLanguageServer/BashLanguageServer.acp",
+  "checksum": "2211efcf1e18ff40e67af43adb1e390a71adf050d7f4a5a28bd1b30009766a47",
+  "size": 3869545,
+  "lastUpdated": "2026-03-06 15:15:49",
+  "tags": ["intelligence", "language_servers", "development"]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "BashLanguageServer",
+  "displayName": "Bash language server",
+  "description": "Provides Bash language server for Android Code Studio\n⚠️ To activate make sure to install bash language server via npm ( npm install -g bash-language-server )",
+  "version": "1.0",
+  "author": "ACS Developer",
+  "icon": "icon.png",
+  "enabled": true
+}

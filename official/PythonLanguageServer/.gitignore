@@ -1,0 +1,5 @@
+.gradle
+.kotlin
+build
+main/build
+main/meta/plugin.apk

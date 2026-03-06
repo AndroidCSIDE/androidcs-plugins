@@ -1,0 +1,17 @@
+{
+  "id": "io.github.nullij.plugins.lsp",
+  "name": "PythonLanguageServer",
+  "displayName": "Python language server",
+  "description": "Registers and starts the Python language server (pylsp) for code intelligence in .py files",
+  "category": "Development Tools",
+  "author": "ACS Developer",
+  "homepage": "https://github.com/AndroidCSIDE/androidcs-plugins/tree/main/official/PythonLanguageServer",
+  "iconUrl": "https://raw.githubusercontent.com/AndroidCSIDE/androidcs-plugins/refs/heads/main/official/PythonLanguageServer/main/meta/icon.png",
+  "latestVersion": "1.0.0",
+  "minAcsVersion": "1.0.0",
+  "downloadUrl": "https://github.com/AndroidCSIDE/androidcs-plugins/raw/refs/heads/main/official/PythonLanguageServer/PythonLanguageServer.acp",
+  "checksum": "2f4b1a99a80fe449a7ac5fece4f3f12735db5633b9a08ce84d7a54dba771abe5",
+  "size": 3948809,
+  "lastUpdated": "2026-03-06 15:21:04",
+  "tags": ["intelligence", "language_servers", "development"]
+}
