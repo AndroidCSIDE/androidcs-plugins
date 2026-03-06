@@ -75,20 +75,15 @@ class PythonLanguageServerManager(
     companion object {
         private const val TAG = "PythonLSP"
 
-        // Common paths where pylsp may be installed depending on the distro,
-        // pip install target, or pyenv/virtualenv setup inside the proot rootfs.
-        private val PYLSP_CANDIDATE_PATHS = arrayOf(
-            "/usr/bin/pylsp",           // Debian/Ubuntu apt or pip --system
-            "/usr/local/bin/pylsp",     // pip install (default prefix)
-            "/bin/pylsp",               // some minimal rootfs layouts
-            "/usr/local/sbin/pylsp",    // occasional sysadmin installs
-            "/root/.local/bin/pylsp",   // pip install --user (root)
+        // Candidate rootfs-relative paths for pylsp, tried in order.
+        val PYLSP_CANDIDATE_PATHS = arrayOf(
+            "/bin/pylsp",                 // confirmed default on device
+            "/usr/bin/pylsp",             // apt or pip --system
+            "/usr/local/bin/pylsp",       // pip install default prefix
+            "/usr/local/sbin/pylsp",
+            "/root/.local/bin/pylsp",     // pip install --user (root)
             "/home/user/.local/bin/pylsp" // pip install --user (non-root)
         )
-
-        /** Returns the first pylsp path that exists on disk, or null if none found. */
-        fun resolvePylspExecutable(): String? =
-            PYLSP_CANDIDATE_PATHS.firstOrNull { java.io.File(it).canExecute() }
 
         private const val BUFFER_SIZE = 32768
         private const val MAX_CONTENT_LENGTH = 10_485_760 // 10 MB
@@ -107,9 +102,15 @@ class PythonLanguageServerManager(
         try {
             Log.d(TAG, "Starting pylsp...")
 
-            val pylspPath = resolvePylspExecutable()
+            // acsenv rootfs is always at context.filesDir/localenv/acsenv.
+            // Check each candidate path on the host filesystem (prefixed with rootfs dir)
+            // and pass the rootfs-relative winner to proot via .command().
+            val acsenvDir = java.io.File(context.filesDir, "localenv/acsenv")
+            val pylspPath = PYLSP_CANDIDATE_PATHS.firstOrNull { rootfsPath ->
+                java.io.File(acsenvDir, rootfsPath).exists()
+            }
             if (pylspPath == null) {
-                Log.e(TAG, "pylsp not found in any of: ${PYLSP_CANDIDATE_PATHS.joinToString()}")
+                Log.e(TAG, "pylsp not found in ${acsenvDir.absolutePath}. Tried: ${PYLSP_CANDIDATE_PATHS.joinToString()}")
                 return@withContext false
             }
             Log.d(TAG, "Using pylsp at: $pylspPath")
