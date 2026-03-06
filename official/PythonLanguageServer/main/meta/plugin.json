@@ -1,7 +1,7 @@
 {
   "name": "PythonLanguageServer",
   "displayName": "Python language server",
-  "description": "Provides Python language server for Android Code Studio",
+  "description": "Provides Python language server for Android Code Studio\n⚠️ To Activate install \u0027pylsp\u0027 by running (pip install python-lsp-server --break-system-packages)",
   "version": "1.0",
   "author": "ACS Developer",
   "icon": "icon.png",
