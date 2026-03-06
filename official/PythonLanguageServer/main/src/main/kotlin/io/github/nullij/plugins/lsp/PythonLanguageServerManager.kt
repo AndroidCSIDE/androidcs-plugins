@@ -75,9 +75,20 @@ class PythonLanguageServerManager(
     companion object {
         private const val TAG = "PythonLSP"
 
-        // pylsp executable path inside the proot rootfs.
-        // `pip install python-lsp-server` inside acsenv places it here.
-        private const val PYLSP_EXECUTABLE = "/usr/local/bin/pylsp"
+        // Common paths where pylsp may be installed depending on the distro,
+        // pip install target, or pyenv/virtualenv setup inside the proot rootfs.
+        private val PYLSP_CANDIDATE_PATHS = arrayOf(
+            "/usr/bin/pylsp",           // Debian/Ubuntu apt or pip --system
+            "/usr/local/bin/pylsp",     // pip install (default prefix)
+            "/bin/pylsp",               // some minimal rootfs layouts
+            "/usr/local/sbin/pylsp",    // occasional sysadmin installs
+            "/root/.local/bin/pylsp",   // pip install --user (root)
+            "/home/user/.local/bin/pylsp" // pip install --user (non-root)
+        )
+
+        /** Returns the first pylsp path that exists on disk, or null if none found. */
+        fun resolvePylspExecutable(): String? =
+            PYLSP_CANDIDATE_PATHS.firstOrNull { java.io.File(it).canExecute() }
 
         private const val BUFFER_SIZE = 32768
         private const val MAX_CONTENT_LENGTH = 10_485_760 // 10 MB
@@ -96,8 +107,15 @@ class PythonLanguageServerManager(
         try {
             Log.d(TAG, "Starting pylsp...")
 
+            val pylspPath = resolvePylspExecutable()
+            if (pylspPath == null) {
+                Log.e(TAG, "pylsp not found in any of: ${PYLSP_CANDIDATE_PATHS.joinToString()}")
+                return@withContext false
+            }
+            Log.d(TAG, "Using pylsp at: $pylspPath")
+
             serverProcess = LSPAccessor.LanguageServerProcess.builder(context)
-                .command(PYLSP_EXECUTABLE)
+                .command(pylspPath)
                 .attachStorage()
                 .withEnv(mapOf(
                     "HOME"        to "/root",
