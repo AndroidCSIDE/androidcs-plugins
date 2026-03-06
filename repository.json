@@ -7,6 +7,16 @@
       "id": "io.github.nullij.plugins.templates.flutter",
       "name": "FlutterTemplate",
       "pluginRepository": "https://raw.githubusercontent.com/AndroidCSIDE/androidcs-plugins/refs/heads/main/official/FlutterTemplate/repository.json"
+    },
+    {
+      "id": "io.github.nullij.plugins.lsp.python",
+      "name": "Python Language Server",
+      "pluginRepository": "https://raw.githubusercontent.com/AndroidCSIDE/androidcs-plugins/refs/heads/main/official/PythonLanguageServer/repository.json"
+    },
+    {
+      "id": "io.github.nullij.plugins.lsp.bash",
+      "name": "Bash Language Server",
+      "pluginRepository": "https://raw.githubusercontent.com/AndroidCSIDE/androidcs-plugins/refs/heads/main/official/BashLanguageServer/repository.json"
     }
   ]
 }
