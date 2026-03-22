@@ -27,7 +27,7 @@ plugins {
 
 }
 
-val pluginVersion = "1.0"
+val pluginVersion = "1.1"
 val pluginName = "FlutterTemplate"
 val packageName = "io.github.nullij.plugins.templates"
 

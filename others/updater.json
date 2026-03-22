@@ -9,5 +9,5 @@
       "apkUrl": "{baseUrl}/acside-{versionName}.apk"
     }
   },
-  "changelog": "https://raw.githubusercontent.com/AndroidCSIDE/androidcs-plugins/refs/heads/main/others/whatsnew/v1.0.md"
+  "changelog": "https://raw.githubusercontent.com/AndroidCSIDE/ACSIDE/refs/heads/main/others/whatsnew/v1.0.md"
 }

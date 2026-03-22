@@ -24,7 +24,7 @@ import io.github.nullij.plugins.templates.flutter.constants.Constants as CV
 object moduleSrcs {
 
     val mainActivityAsKotlin: String = """
-        package com.example.flutter_m3_template
+        package ${CV.packageName}
         
         import io.flutter.embedding.android.FlutterActivity
         
@@ -32,7 +32,7 @@ object moduleSrcs {
     """.trimIndent()
 
     val mainActivityAsJava: String = """
-        package com.example.flutter_m3_template;
+        package  ${CV.packageName};
         
         import io.flutter.embedding.android.FlutterActivity;
         
@@ -46,7 +46,6 @@ object moduleSrcs {
             
             <application
                 android:label="Flutter M3 Template"
-                android:name="io.flutter.app.FlutterApplication"
                 android:icon="@mipmap/ic_launcher"
                 android:enableOnBackInvokedCallback="true">
                 <activity
