@@ -29,8 +29,10 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        mavenLocal()
     }
 }
 
 rootProject.name = "PythonLanguageServer"
 include("main")
+include("editor")

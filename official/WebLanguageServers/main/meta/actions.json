@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "actions": [
+    {
+      "id": "action_bash_lsp",
+      "type": "plugin_action",
+      "title": "Web Language Servers Bundle",
+      "description": "Registers and starts the HTML, CSS, TS, Json, JS language servers for code intelligence in web development files",
+      "iconName": "Code",
+      "showIn": ["onEditorActivityLaunched"],
+      "priority": 50,
+      "pluginConfig": {
+        "pluginPath": "WebLanguageServers/plugin.apk",
+        "className": "io.github.nullij.plugins.lsp.LanguageServer",
+        "methodName": "getContext",
+        "methodType": "static"
+      }
+    }
+  ]
+}

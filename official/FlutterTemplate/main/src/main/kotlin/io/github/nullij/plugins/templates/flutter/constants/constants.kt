@@ -13,12 +13,10 @@
  *
  *  You should have received a copy of the GNU General Public License
  *   along with FlutterTemplatePlugin.  If not, see <https://www.gnu.org/licenses/>.
-*/
+ */
 
 package io.github.nullij.plugins.templates.flutter.constants
-/**
-  * @author nullij @ https://github.com/nullij
- */
+/** @author nullij @ https://github.com/nullij */
 object Constants {
 
     var packageName: String = "com.example.flutter_m3_template" // default
@@ -32,5 +30,4 @@ object Constants {
     val androidApplicationVersion: String = "8.13.0"
     val flutterPluginLoaderVersion: String = "1.0.0"
     val jetbrainsAndroidKotlinVersion: String = "2.3.10"
-
 }

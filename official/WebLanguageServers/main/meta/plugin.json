@@ -1,0 +1,9 @@
+{
+  "name": "WebLanguageServers",
+  "displayName": "Web Language Servers Bundle",
+  "description": "Provides HTML, CSS, TS, JS, Json language server for Android Code Studio\n⚠️ To activate make sure to install web lsp bundle via install_lsp ( $ install_lsp get html ts )",
+  "version": "1.0",
+  "author": "ACS Developer",
+  "icon": "icon.png",
+  "enabled": true
+}

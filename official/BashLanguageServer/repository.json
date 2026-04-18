@@ -7,11 +7,15 @@
   "author": "ACS Developer",
   "homepage": "https://github.com/AndroidCSIDE/androidcs-plugins/tree/main/official/BashLanguageServer",
   "iconUrl": "https://raw.githubusercontent.com/AndroidCSIDE/androidcs-plugins/refs/heads/main/official/BashLanguageServer/main/meta/icon.png",
-  "latestVersion": "1.0.0",
+  "latestVersion": "1.0",
   "minAcsVersion": "1.0.0",
   "downloadUrl": "https://github.com/AndroidCSIDE/androidcs-plugins/raw/refs/heads/main/official/BashLanguageServer/BashLanguageServer.acp",
-  "checksum": "2211efcf1e18ff40e67af43adb1e390a71adf050d7f4a5a28bd1b30009766a47",
-  "size": 3869545,
-  "lastUpdated": "2026-03-06 15:15:49",
-  "tags": ["intelligence", "language_servers", "development"]
+  "checksum": "6d799b0faa8e17cec92d1cc6236d654deca7bd7d3620a0c5b35d263ccafdeb28",
+  "size": 5924681,
+  "lastUpdated": "2026-04-17 20:07:53",
+  "tags": [
+    "intelligence",
+    "language_servers",
+    "development"
+  ]
 }

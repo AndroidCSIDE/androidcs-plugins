@@ -17,14 +17,16 @@
 
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.security.MessageDigest
 
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("maven-publish")
-    id("io.github.nullij").version("1.0.0") // acp-gradle-plugin | important
-
+    id("io.github.nullij.acside-gradle-plugin").version("0.2.0") // acp-gradle-plugin | important
 }
 
 val pluginVersion = "1.1"
@@ -76,32 +78,37 @@ android {
 }
 
 dependencies {
-    implementation("com.google.code.gson:gson:2.10.1")
+    implementation(libs.acside.plugin.api)
+    implementation(libs.google.gson)
+
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.material)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.core.ktx)
     
-    val composeBom = platform("androidx.compose:compose-bom:2024.12.01")
-    implementation(composeBom)
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-graphics")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.activity:activity-compose:1.9.3")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
-    
-    implementation("androidx.lifecycle:lifecycle-common:2.8.7")
-    implementation("androidx.lifecycle:lifecycle-runtime:2.8.7")
-    implementation("androidx.savedstate:savedstate:1.2.1")
-    
-    debugImplementation("androidx.compose.ui:ui-tooling")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
-    
-    implementation("com.airbnb.android:lottie:6.3.0")
-    implementation("com.airbnb.android:lottie-compose:6.3.0")
+    implementation(platform(libs.compose.bom))
+
+    implementation(libs.compose.ui)
+    implementation(libs.compose.ui.graphics)
+    implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.compose.material3)
+
+    implementation(libs.activity.compose)
+
+    implementation(libs.lifecycle.runtime.ktx)
+    implementation(libs.lifecycle.viewmodel.compose)
+    implementation(libs.lifecycle.common)
+    implementation(libs.lifecycle.runtime)
+
+    implementation(libs.androidx.savedstate)
+
+    implementation(libs.lottie)
+    implementation(libs.lottie.compose)
+
+    debugImplementation(libs.compose.ui.tooling)
+    debugImplementation(libs.compose.ui.test.manifest)
+
 }
 
 tasks.register("updatePluginInf") {
@@ -122,4 +129,54 @@ tasks.register("updatePluginInf") {
 
 tasks.named("preBuild") {
     dependsOn("updatePluginInf")
+}
+tasks.matching { it.name == "assembleRelease" || it.name == "assembleDebug" }.configureEach {
+    finalizedBy("updateRepositoryJson")
+}
+
+tasks.register("updateRepositoryJson") {
+    description = "Copies .acp to root dir, then updates repository.json with checksum, size, version, and timestamp."
+    group = "publishing"
+
+    doLast {
+        val acpFile  = file("build/FlutterTemplate.acp")
+        val rootDir  = rootProject.projectDir
+        val repoFile = rootDir.resolve("repository.json")
+        val destAcp  = rootDir.resolve("${pluginName}.acp")
+
+        if (!acpFile.exists()) {
+            println("Warning: ${acpFile.path} not found — skipping.")
+            return@doLast
+        }
+
+        // ── Copy .acp to root dir ─────────────────────────────────────────
+        acpFile.copyTo(destAcp, overwrite = true)
+        println("Copied ${acpFile.name} to ${destAcp.absolutePath}")
+
+        if (!repoFile.exists()) {
+            println("repository.json not found — skipping")
+            return@doLast
+        }
+
+        val gson = GsonBuilder().setPrettyPrinting().create()
+        val json = gson.fromJson(repoFile.readText(), JsonObject::class.java)
+
+        // ── version ───────────────────────────────────────────────────────
+        json.addProperty("latestVersion", pluginVersion)
+
+        // ── timestamp ─────────────────────────────────────────────────────
+        val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())
+        json.addProperty("lastUpdated", timestamp)
+
+        // ── checksum + size ───────────────────────────────────────────────
+        val bytes    = destAcp.readBytes()
+        val digest   = MessageDigest.getInstance("SHA-256")
+        val checksum = digest.digest(bytes).joinToString("") { b -> "%02x".format(b) }
+        json.addProperty("checksum", checksum)
+        json.addProperty("size", bytes.size.toLong())
+
+        repoFile.writeText(gson.toJson(json))
+
+        println("Updated repository.json\n\t- version    : $pluginVersion\n\t- lastUpdated: $timestamp\n\t- checksum   : $checksum\n\t- size       : ${bytes.size} bytes")
+    }
 }

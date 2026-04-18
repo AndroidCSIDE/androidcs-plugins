@@ -10,8 +10,12 @@
   "latestVersion": "1.1",
   "minAcsVersion": "1.0.0",
   "downloadUrl": "https://github.com/AndroidCSIDE/androidcs-plugins/raw/refs/heads/main/official/FlutterTemplate/FlutterTemplate.acp",
-  "checksum": "2f9687426a86f3fd834061535208185b37f4dbd6a39bf2c1da385da7c8920824",
-  "size": 8638569,
-  "lastUpdated": "2026-03-22 09:54:08",
-  "tags": ["templates", "flutter", "development"]
+  "checksum": "10175380e3393849d2b03a1f98551ff83c22495c6d2c14985ed82d0dce30b852",
+  "size": 13331801,
+  "lastUpdated": "2026-04-18 07:12:18",
+  "tags": [
+    "templates",
+    "flutter",
+    "development"
+  ]
 }

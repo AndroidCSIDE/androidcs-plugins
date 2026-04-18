@@ -1,56 +1,57 @@
 /*
- *  This file is part of PythonLanguageServer.
+ *  This file is part of WebLanguageServers.
  *
- *  PythonLanguageServer is free software: you can redistribute it and/or modify
+ *  WebLanguageServers is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
  *
- *  PythonLanguageServer is distributed in the hope that it will be useful,
+ *  WebLanguageServers is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *   along with PythonLanguageServer.  If not, see <https://www.gnu.org/licenses/>.
+ *   along with WebLanguageServers.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 package io.github.nullij.plugins.lsp
 
-import android.content.Context
-import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
-import com.nullij.androidcodestudio.internals.LSPAccessor
-import kotlinx.coroutines.*
+import com.nullij.androidcodestudio.plugins.api.LanguageServerClient
+import com.nullij.androidcodestudio.plugins.api.PluginApi
+import com.nullij.androidcodestudio.plugins.api.PluginLanguageServerSpec
 import java.io.*
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.*
 
 /**
- * Manages the Python LSP server (pylsp) for ACS.
+ * Manages the Python LSP server (pyright-langserver) for ACS.
  *
- * pylsp is launched inside the IDE's proot/acsenv environment.
- * It must be installed beforehand at /usr/bin/pylsp (or wherever it lands
- * after `pip install python-lsp-server` inside the rootfs).
+ * Launched via: /bin/pyright-langserver --stdio
  *
- * This class implements [LSPAccessor.PluginLanguageServer] so it can be
- * registered with the IDE via [LSPAccessor.registerServer].
- *
- * Registration (call this once, e.g. from your action or on plugin load):
- * ```kotlin
- * val lsp = LSPAccessor.resolve(context) ?: return
- * lsp.registerServer("python", PythonLanguageServerManager(context))
- * lsp.startServer("python")
- * ```
+ * Capabilities supported by pyright-langserver:
+ * - textDocument/completion (symbols, imports, keywords, snippets)
+ * - textDocument/hover (type information, docstrings)
+ * - textDocument/signatureHelp (function/method parameter hints)
+ * - textDocument/definition (go-to symbol definition)
+ * - textDocument/references (find all usages)
+ * - textDocument/documentSymbol (classes, functions, variables)
+ * - textDocument/documentHighlight (highlight symbol usages)
+ * - textDocument/formatting (via autopep8/black integration)
+ * - textDocument/rangeFormatting
+ * - textDocument/rename (symbol rename across workspace)
+ * - textDocument/codeAction (quick fixes, organize imports)
+ * - textDocument/inlayHint (parameter names, return types)
+ * - textDocument/publishDiagnostics (type errors, pushed)
  *
  * @author nullij @ https://github.com/nullij
  */
-class PythonLanguageServerManager(
-    private val context: Context
-) : LSPAccessor.PluginLanguageServer {
+class PythonLanguageServerManager : PluginLanguageServerSpec {
 
     private val gson = Gson()
 
@@ -65,274 +66,433 @@ class PythonLanguageServerManager(
     @Volatile private var running = false
     @Volatile private var initializing = false
 
-    // Cache of diagnostics pushed by pylsp via textDocument/publishDiagnostics.
-    // Keyed by document URI. Read by PythonLanguageClient.getDiagnostics().
-    private val diagnosticsCache = ConcurrentHashMap<String, com.google.gson.JsonArray>()
+    private val diagnosticsCache = ConcurrentHashMap<String, JsonArray>()
 
-    /** Return the last set of diagnostics pylsp pushed for [uri], or null if none yet. */
-    fun getCachedDiagnostics(uri: String): com.google.gson.JsonArray? = diagnosticsCache[uri]
+    fun getCachedDiagnostics(uri: String): JsonArray? = diagnosticsCache[uri]
 
     companion object {
-        private const val TAG = "PythonLSP"
-
-        // Candidate rootfs-relative paths for pylsp, tried in order.
-        val PYLSP_CANDIDATE_PATHS = arrayOf(
-            "/bin/pylsp",                 // confirmed default on device
-            "/usr/bin/pylsp",             // apt or pip --system
-            "/usr/local/bin/pylsp",       // pip install default prefix
-            "/usr/local/sbin/pylsp",
-            "/root/.local/bin/pylsp",     // pip install --user (root)
-            "/home/user/.local/bin/pylsp" // pip install --user (non-root)
-        )
-
+        private const val TAG = "PyLSP"
         private const val BUFFER_SIZE = 32768
-        private const val MAX_CONTENT_LENGTH = 10_485_760 // 10 MB
+        private const val MAX_CONTENT_LENGTH = 10_485_760
     }
 
-    // ─── PluginLanguageServer ─────────────────────────────────────────────────
+    // ─── PluginLanguageServerSpec ─────────────────────────────────────────────
 
-    override suspend fun start(): Boolean = withContext(Dispatchers.IO) {
+    override val languageId: String = "python"
+
+    override fun start(): Boolean = runBlocking {
         if (running) {
-            Log.w(TAG, "Python server already running")
-            return@withContext true
+
+            android.util.Log.i(TAG, "start() called but server is already running — skipping")
+            return@runBlocking true
         }
 
         initializing = true
+        android.util.Log.i(TAG, "start() - launching pyright-langserver process")
 
         try {
-            Log.d(TAG, "Starting pylsp...")
+            serverProcess =
+                PluginApi.process
+                    .builder()
+                    .command("/bin/pyright-langserver", "--stdio")
+                    .attachStorage()
+                    .withEnv(
+                        mapOf(
+                            "HOME" to "/root",
+                            "USER" to "root",
+                            "PATH" to
+                                "/bin:/usr/bin:/root/acslab/packages/official/nodejs-v25.9.0/node-v25.9.0-linux-arm64/bin",
+                        )
+                    )
+                    .launch()
 
-            // acsenv rootfs is always at context.filesDir/localenv/acsenv.
-            // Check each candidate path on the host filesystem (prefixed with rootfs dir)
-            // and pass the rootfs-relative winner to proot via .command().
-            val acsenvDir = java.io.File(context.filesDir, "localenv/acsenv")
-            val pylspPath = PYLSP_CANDIDATE_PATHS.firstOrNull { rootfsPath ->
-                java.io.File(acsenvDir, rootfsPath).exists()
-            }
-            if (pylspPath == null) {
-                Log.e(TAG, "pylsp not found in ${acsenvDir.absolutePath}. Tried: ${PYLSP_CANDIDATE_PATHS.joinToString()}")
-                return@withContext false
-            }
-            Log.d(TAG, "Using pylsp at: $pylspPath")
+            android.util.Log.i(TAG, "process launched — setting up I/O streams")
 
-            serverProcess = LSPAccessor.LanguageServerProcess.builder(context)
-                .command(pylspPath)
-                .attachStorage()
-                .withEnv(mapOf(
-                    "HOME"        to "/root",
-                    "USER"        to "root",
-                    "PYTHONPATH"  to "/usr/lib/python3/dist-packages",
-                    // Suppress pylsp's own log noise on stderr
-                    "PYLSP_LOG_LEVEL" to "ERROR"
-                ))
-                .launch()
-
-            writer = BufferedWriter(
-                OutputStreamWriter(serverProcess!!.outputStream, StandardCharsets.UTF_8),
-                BUFFER_SIZE
-            )
+            writer =
+                BufferedWriter(
+                    OutputStreamWriter(serverProcess!!.outputStream, StandardCharsets.UTF_8),
+                    BUFFER_SIZE,
+                )
 
             startReaderThread()
             startErrorReaderThread()
 
-            // Give the process a moment to start before the handshake
-            delay(800)
+            // Give the Node.js process a moment to boot before the handshake.
+            android.util.Log.i(TAG, "waiting 1200 ms for process to boot…")
+            delay(1200)
+            android.util.Log.i(TAG, "boot wait done — sending initialize")
 
             val initialized = sendInitialize()
 
-            return@withContext if (initialized) {
+            return@runBlocking if (initialized) {
                 client = PythonLanguageClient(this@PythonLanguageServerManager)
                 running = true
-                Log.i(TAG, "✅ pylsp started successfully")
+                android.util.Log.i(TAG, "server started successfully ✓")
                 true
             } else {
-                Log.e(TAG, "❌ pylsp initialize handshake failed")
-                stop()
+                android.util.Log.e(TAG, "sendInitialize() returned false — aborting start")
+                stopInternal()
                 false
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to start pylsp", e)
-            stop()
+            android.util.Log.e(
+                TAG,
+                "exception during start(): ${e::class.simpleName}: ${e.message}",
+                e,
+            )
+            stopInternal()
             false
         } finally {
             initializing = false
         }
     }
 
-    override suspend fun stop(): Unit = withContext(Dispatchers.IO) {
-        try {
-            Log.d(TAG, "Stopping pylsp...")
-            running = false
-
-            try {
-                sendRequest("shutdown", JsonObject())
-                sendNotification("exit", JsonObject())
-                delay(400)
-            } catch (e: Exception) {
-                Log.w(TAG, "Error during LSP shutdown sequence", e)
-            }
-
-            try { writer?.close() } catch (_: Exception) {}
-
-            serverProcess?.destroy()
-            serverProcess?.waitFor()
-            serverProcess = null
-
-            client = null
-            pendingRequests.clear()
-
-            Log.d(TAG, "✅ pylsp stopped")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error stopping pylsp", e)
-        }
-    }
+    override fun stop() = runBlocking { stopInternal() }
 
     override fun isRunning(): Boolean = running
 
-    override fun getClient(): Any = client
-        ?: error("getClient() called before server is started")
-
-    override suspend fun openDocument(file: File): Boolean = withContext(Dispatchers.IO) {
-        if (!running) {
-            Log.w(TAG, "openDocument called but server is not running")
-            return@withContext false
-        }
-        try {
-            val uri  = file.toUri()
-            val text = file.readText()
-
-            val params = JsonObject().apply {
-                add("textDocument", JsonObject().apply {
-                    addProperty("uri", uri)
-                    addProperty("languageId", "python")
-                    addProperty("version", 1)
-                    addProperty("text", text)
-                })
-            }
-
-            sendNotification("textDocument/didOpen", params)
-            delay(300)
-
-            Log.d(TAG, "✅ Opened: ${file.name}")
-            true
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to open document: ${file.name}", e)
-            false
-        }
-    }
-
-    override suspend fun closeDocument(file: File): Unit = withContext(Dispatchers.IO) {
-        if (!running) return@withContext
-        try {
-            val params = JsonObject().apply {
-                add("textDocument", JsonObject().apply {
-                    addProperty("uri", file.toUri())
-                })
-            }
-            sendNotification("textDocument/didClose", params)
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to close document: ${file.name}", e)
-        }
-    }
-
-    override suspend fun documentChanged(file: File, content: String, version: Int): Unit =
+    private suspend fun stopInternal(): Unit =
         withContext(Dispatchers.IO) {
-            if (!running) return@withContext
             try {
-                val params = JsonObject().apply {
-                    add("textDocument", JsonObject().apply {
-                        addProperty("uri", file.toUri())
-                        addProperty("version", version)
-                    })
-                    add("contentChanges", gson.toJsonTree(listOf(mapOf("text" to content))))
-                }
-                sendNotification("textDocument/didChange", params)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to send document change for: ${file.name}", e)
-            }
+
+                running = false
+
+                try {
+                    sendRequest("shutdown", JsonObject())
+                    sendNotification("exit", JsonObject())
+                    delay(400)
+                } catch (e: Exception) {}
+
+                try {
+                    writer?.close()
+                } catch (_: Exception) {}
+
+                serverProcess?.destroy()
+                serverProcess?.waitFor()
+                serverProcess = null
+
+                client = null
+                pendingRequests.clear()
+            } catch (e: Exception) {}
         }
 
-    override fun destroy() {
+    override fun getClient(): LanguageServerClient =
+        client ?: error("getClient() called before server is started")
+
+    fun destroy() {
         scope.cancel()
-        runBlocking { stop() }
+        stop()
     }
 
     // ─── LSP initialize handshake ─────────────────────────────────────────────
 
     private suspend fun sendInitialize(): Boolean {
+
         return try {
-            val params = JsonObject().apply {
-                addProperty("processId", android.os.Process.myPid())
-                addProperty("rootUri", null as String?)
+            val params =
+                JsonObject().apply {
+                    addProperty("processId", android.os.Process.myPid())
+                    addProperty("rootUri", null as String?)
 
-                add("capabilities", JsonObject().apply {
-                    add("textDocument", JsonObject().apply {
-                        add("completion", JsonObject().apply {
-                            add("completionItem", JsonObject().apply {
-                                addProperty("snippetSupport", true)
-                                addProperty("deprecatedSupport", true)
-                                addProperty("preselectSupport", true)
-                                add("documentationFormat",
-                                    gson.toJsonTree(arrayOf("markdown", "plaintext")))
-                                add("resolveSupport", gson.toJsonTree(mapOf(
-                                    "properties" to arrayOf(
-                                        "documentation", "detail", "additionalTextEdits"
+                    add(
+                        "capabilities",
+                        JsonObject().apply {
+                            add(
+                                "textDocument",
+                                JsonObject().apply {
+                                    add(
+                                        "synchronization",
+                                        JsonObject().apply {
+                                            addProperty("dynamicRegistration", false)
+                                            addProperty("willSave", false)
+                                            addProperty("willSaveWaitUntil", false)
+                                            addProperty("didSave", true)
+                                        },
                                     )
-                                )))
-                            })
-                            add("completionItemKind", JsonObject().apply {
-                                add("valueSet", gson.toJsonTree((1..25).toList()))
-                            })
-                        })
-                        add("hover", JsonObject().apply {
-                            add("contentFormat",
-                                gson.toJsonTree(arrayOf("markdown", "plaintext")))
-                        })
-                        add("signatureHelp", JsonObject().apply {
-                            add("signatureInformation", JsonObject().apply {
-                                add("documentationFormat",
-                                    gson.toJsonTree(arrayOf("markdown", "plaintext")))
-                            })
-                        })
-                        add("synchronization", JsonObject().apply {
-                            addProperty("dynamicRegistration", false)
-                            addProperty("willSave", false)
-                            addProperty("willSaveWaitUntil", false)
-                            addProperty("didSave", true)
-                        })
-                        add("publishDiagnostics", JsonObject().apply {
-                            addProperty("relatedInformation", true)
-                        })
-                    })
-                    add("workspace", JsonObject().apply {
-                        addProperty("applyEdit", true)
-                        add("workspaceEdit", gson.toJsonTree(mapOf("documentChanges" to true)))
-                        addProperty("workspaceFolders", false)
-                    })
-                })
 
-                add("initializationOptions", JsonObject())
+                                    add(
+                                        "completion",
+                                        JsonObject().apply {
+                                            add(
+                                                "completionItem",
+                                                JsonObject().apply {
+                                                    addProperty("snippetSupport", true)
+                                                    addProperty("deprecatedSupport", true)
+                                                    addProperty("preselectSupport", true)
+                                                    add(
+                                                        "documentationFormat",
+                                                        gson.toJsonTree(
+                                                            arrayOf("markdown", "plaintext")
+                                                        ),
+                                                    )
+                                                    add(
+                                                        "resolveSupport",
+                                                        gson.toJsonTree(
+                                                            mapOf(
+                                                                "properties" to
+                                                                    arrayOf(
+                                                                        "documentation",
+                                                                        "detail",
+                                                                        "additionalTextEdits",
+                                                                    )
+                                                            )
+                                                        ),
+                                                    )
+                                                },
+                                            )
+                                            add(
+                                                "completionItemKind",
+                                                JsonObject().apply {
+                                                    add(
+                                                        "valueSet",
+                                                        gson.toJsonTree((1..25).toList()),
+                                                    )
+                                                },
+                                            )
+                                            addProperty("contextSupport", true)
+                                        },
+                                    )
+
+                                    add(
+                                        "hover",
+                                        JsonObject().apply {
+                                            add(
+                                                "contentFormat",
+                                                gson.toJsonTree(arrayOf("markdown", "plaintext")),
+                                            )
+                                        },
+                                    )
+
+                                    // Pyright supports signatureHelp with parameter information.
+                                    add(
+                                        "signatureHelp",
+                                        JsonObject().apply {
+                                            add(
+                                                "signatureInformation",
+                                                JsonObject().apply {
+                                                    add(
+                                                        "documentationFormat",
+                                                        gson.toJsonTree(
+                                                            arrayOf("markdown", "plaintext")
+                                                        ),
+                                                    )
+                                                    add(
+                                                        "parameterInformation",
+                                                        JsonObject().apply {
+                                                            addProperty("labelOffsetSupport", true)
+                                                        },
+                                                    )
+                                                },
+                                            )
+                                        },
+                                    )
+
+                                    add("documentHighlight", JsonObject())
+
+                                    add(
+                                        "documentSymbol",
+                                        JsonObject().apply {
+                                            addProperty("hierarchicalDocumentSymbolSupport", true)
+                                        },
+                                    )
+
+                                    // Pyright supports formatting via bundled formatter.
+                                    add("formatting", JsonObject())
+                                    add("rangeFormatting", JsonObject())
+
+                                    // Pyright supports rename across the workspace.
+                                    add(
+                                        "rename",
+                                        JsonObject().apply {
+                                            addProperty("dynamicRegistration", false)
+                                        },
+                                    )
+
+                                    // Pyright supports code actions: quick fixes, organize imports.
+                                    add(
+                                        "codeAction",
+                                        JsonObject().apply {
+                                            add(
+                                                "codeActionLiteralSupport",
+                                                JsonObject().apply {
+                                                    add(
+                                                        "codeActionKind",
+                                                        JsonObject().apply {
+                                                            add(
+                                                                "valueSet",
+                                                                gson.toJsonTree(
+                                                                    arrayOf(
+                                                                        "quickfix",
+                                                                        "source.organizeImports",
+                                                                    )
+                                                                ),
+                                                            )
+                                                        },
+                                                    )
+                                                },
+                                            )
+                                        },
+                                    )
+
+                                    // Pyright supports inlay hints for parameter names and return
+                                    // types.
+                                    add(
+                                        "inlayHint",
+                                        JsonObject().apply {
+                                            addProperty("dynamicRegistration", false)
+                                        },
+                                    )
+
+                                    add(
+                                        "publishDiagnostics",
+                                        JsonObject().apply {
+                                            addProperty("relatedInformation", true)
+                                        },
+                                    )
+                                },
+                            )
+
+                            add(
+                                "workspace",
+                                JsonObject().apply {
+                                    addProperty("applyEdit", true)
+                                    add(
+                                        "workspaceEdit",
+                                        gson.toJsonTree(mapOf("documentChanges" to true)),
+                                    )
+                                    addProperty("workspaceFolders", false)
+                                },
+                            )
+                        },
+                    )
+
+                    // Pyright initializationOptions: tune analysis behaviour.
+                    add(
+                        "initializationOptions",
+                        JsonObject().apply {
+                            add(
+                                "python",
+                                JsonObject().apply {
+                                    add(
+                                        "analysis",
+                                        JsonObject().apply {
+                                            addProperty("autoImportCompletions", true)
+                                            addProperty("useLibraryCodeForTypes", true)
+                                        },
+                                    )
+                                },
+                            )
+                        },
+                    )
+                }
+
+            android.util.Log.d(TAG, "sending initialize request…")
+            val response = sendRequest("initialize", params)
+            if (response == null) {
+                android.util.Log.e(
+                    TAG,
+                    "initialize request timed out or failed — response was null",
+                )
+                return false
             }
-
-            Log.d(TAG, "Sending initialize...")
-            val response = sendRequest("initialize", params) ?: return false
-            Log.d(TAG, "Initialize response received")
-
+            android.util.Log.i(TAG, "initialize response received: ${response}")
             sendNotification("initialized", JsonObject())
-            Log.d(TAG, "✅ pylsp initialized")
+            android.util.Log.i(TAG, "sent initialized notification")
             true
         } catch (e: Exception) {
-            Log.e(TAG, "Initialize failed", e)
+            android.util.Log.e(
+                TAG,
+                "exception in sendInitialize(): ${e::class.simpleName}: ${e.message}",
+                e,
+            )
             false
+        }
+    }
+
+    // ─── Document lifecycle ───────────────────────────────────────────────────
+
+    override fun openDocument(file: File): Boolean {
+        if (!running) {
+            android.util.Log.w(
+                TAG,
+                "openDocument() called but server is not running — file: ${file.name}",
+            )
+            return false
+        }
+        val content =
+            try {
+                file.readText()
+            } catch (e: Exception) {
+                android.util.Log.e(
+                    TAG,
+                    "failed to read file for openDocument: ${file.absolutePath}",
+                    e,
+                )
+                return false
+            }
+        android.util.Log.d(TAG, "openDocument: ${file.name} (${content.length} chars)")
+        scope.launch {
+            sendNotification(
+                "textDocument/didOpen",
+                JsonObject().apply {
+                    add(
+                        "textDocument",
+                        JsonObject().apply {
+                            addProperty("uri", file.toUri())
+                            addProperty("languageId", "python")
+                            addProperty("version", 1)
+                            addProperty("text", content)
+                        },
+                    )
+                },
+            )
+        }
+        return true
+    }
+
+    override fun closeDocument(file: File) {
+        if (!running) return
+        scope.launch {
+            sendNotification(
+                "textDocument/didClose",
+                JsonObject().apply {
+                    add("textDocument", JsonObject().apply { addProperty("uri", file.toUri()) })
+                },
+            )
+        }
+    }
+
+    override fun documentChanged(file: File, content: String, version: Int) {
+        if (!running) return
+        scope.launch {
+            sendNotification(
+                "textDocument/didChange",
+                JsonObject().apply {
+                    add(
+                        "textDocument",
+                        JsonObject().apply {
+                            addProperty("uri", file.toUri())
+                            addProperty("version", version)
+                        },
+                    )
+                    add(
+                        "contentChanges",
+                        JsonArray().apply {
+                            add(
+                                JsonObject().apply {
+                                    // Full document sync — matches textDocumentSync: Full
+                                    addProperty("text", content)
+                                }
+                            )
+                        },
+                    )
+                },
+            )
         }
     }
 
     // ─── JSON-RPC transport ───────────────────────────────────────────────────
 
-    /**
-     * Send a request and block (with timeout) until the response arrives.
-     * Mirrors DartLanguageServerManager.sendRequest exactly.
-     */
     internal suspend fun sendRequest(method: String, params: JsonObject): JsonObject? {
         return withContext(Dispatchers.IO) {
             try {
@@ -340,38 +500,37 @@ class PythonLanguageServerManager(
                 val deferred = CompletableDeferred<JsonObject>()
                 pendingRequests[id] = deferred
 
-                val request = JsonObject().apply {
-                    addProperty("jsonrpc", "2.0")
-                    addProperty("id", id)
-                    addProperty("method", method)
-                    add("params", params)
-                }
+                val request =
+                    JsonObject().apply {
+                        addProperty("jsonrpc", "2.0")
+                        addProperty("id", id)
+                        addProperty("method", method)
+                        add("params", params)
+                    }
 
                 writeMessage(gson.toJson(request))
 
                 withTimeout(30_000) { deferred.await() }
             } catch (e: TimeoutCancellationException) {
-                Log.e(TAG, "Request timed out: $method")
+                android.util.Log.e(TAG, "request timed out: method=$method")
                 null
             } catch (e: Exception) {
-                Log.e(TAG, "Error sending request: $method", e)
+                android.util.Log.e(TAG, "sendRequest exception: method=$method, ${e.message}")
                 null
             }
         }
     }
 
-    /** Send a notification (no response expected). */
     internal fun sendNotification(method: String, params: JsonObject) {
         try {
-            val notification = JsonObject().apply {
-                addProperty("jsonrpc", "2.0")
-                addProperty("method", method)
-                add("params", params)
-            }
+            val notification =
+                JsonObject().apply {
+                    addProperty("jsonrpc", "2.0")
+                    addProperty("method", method)
+                    add("params", params)
+                }
             writeMessage(gson.toJson(notification))
-        } catch (e: Exception) {
-            Log.e(TAG, "Error sending notification: $method", e)
-        }
+        } catch (e: Exception) {}
     }
 
     private fun writeMessage(content: String) {
@@ -386,64 +545,65 @@ class PythonLanguageServerManager(
     // ─── Reader threads ───────────────────────────────────────────────────────
 
     private fun startReaderThread() {
-        Thread({
-            try {
-                val inputStream = serverProcess!!.inputStream
+        Thread(
+                {
+                    try {
+                        val inputStream = serverProcess!!.inputStream
+                        while (running || initializing) {
+                            var contentLength = -1
 
-                while (running || initializing) {
-                    var contentLength = -1
+                            while (true) {
+                                val line = readLineFromStream(inputStream) ?: return@Thread
+                                if (line.isEmpty()) break
+                                if (line.startsWith("Content-Length:")) {
+                                    contentLength = line.substring(15).trim().toInt()
+                                }
+                            }
 
-                    // Read headers
-                    while (true) {
-                        val line = readLineFromStream(inputStream) ?: return@Thread
-                        if (line.isEmpty()) break
-                        if (line.startsWith("Content-Length:")) {
-                            contentLength = line.substring(15).trim().toInt()
+                            if (contentLength <= 0 || contentLength > MAX_CONTENT_LENGTH) continue
+
+                            val buffer = ByteArray(contentLength)
+                            var totalRead = 0
+                            while (totalRead < contentLength) {
+                                val read =
+                                    inputStream.read(buffer, totalRead, contentLength - totalRead)
+                                if (read < 0) break
+                                totalRead += read
+                            }
+
+                            if (totalRead == contentLength) {
+                                handleMessage(String(buffer, StandardCharsets.UTF_8))
+                            } else {}
                         }
-                    }
-
-                    if (contentLength <= 0) continue
-                    if (contentLength > MAX_CONTENT_LENGTH) {
-                        Log.e(TAG, "Message too large: $contentLength bytes — skipping")
-                        continue
-                    }
-
-                    // Read exact byte count
-                    val buffer = ByteArray(contentLength)
-                    var totalRead = 0
-                    while (totalRead < contentLength) {
-                        val read = inputStream.read(buffer, totalRead, contentLength - totalRead)
-                        if (read < 0) break
-                        totalRead += read
-                    }
-
-                    if (totalRead == contentLength) {
-                        handleMessage(String(buffer, StandardCharsets.UTF_8))
-                    } else {
-                        Log.e(TAG, "Incomplete read: $totalRead / $contentLength bytes")
-                    }
-                }
-            } catch (e: Exception) {
-                if (running || initializing) Log.e(TAG, "Reader thread error", e)
-            }
-        }, "pylsp-reader").apply { priority = Thread.MAX_PRIORITY }.start()
+                    } catch (e: Exception) {}
+                },
+                "pylsp-reader",
+            )
+            .apply { priority = Thread.MAX_PRIORITY }
+            .start()
     }
 
     private fun startErrorReaderThread() {
-        Thread({
-            try {
-                val errorReader = BufferedReader(
-                    InputStreamReader(serverProcess!!.errorStream),
-                    BUFFER_SIZE
-                )
-                var line: String?
-                while (errorReader.readLine().also { line = it } != null) {
-                    Log.d(TAG, "[pylsp stderr] $line")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error reader thread error", e)
-            }
-        }, "pylsp-error-reader").start()
+        Thread(
+                {
+                    try {
+                        val reader =
+                            BufferedReader(
+                                InputStreamReader(serverProcess!!.errorStream),
+                                BUFFER_SIZE,
+                            )
+                        var line: String?
+                        while (reader.readLine().also { line = it } != null) {
+                            android.util.Log.w(TAG, "stderr: $line")
+                        }
+                        android.util.Log.i(TAG, "stderr stream closed")
+                    } catch (e: Exception) {
+                        android.util.Log.e(TAG, "error-reader thread crashed: ${e.message}", e)
+                    }
+                },
+                "pylsp-error-reader",
+            )
+            .start()
     }
 
     private fun readLineFromStream(inputStream: InputStream): String? {
@@ -452,8 +612,6 @@ class PythonLanguageServerManager(
         while (inputStream.read().also { byte = it } != -1) {
             val char = byte.toChar()
             if (char == '\r') {
-                // Peek the next byte without mark/reset (not supported on process streams).
-                // If it's \n we consume it; if not we treat it as part of the next line.
                 val next = inputStream.read()
                 if (next == -1) return if (sb.isEmpty()) null else sb.toString()
                 if (next != '\n'.code) sb.append(next.toChar())
@@ -467,6 +625,8 @@ class PythonLanguageServerManager(
         return if (byte == -1 && sb.isEmpty()) null else sb.toString()
     }
 
+    // ─── Message handling ─────────────────────────────────────────────────────
+
     private fun handleMessage(json: String) {
         try {
             val obj = gson.fromJson(json, JsonObject::class.java)
@@ -477,10 +637,11 @@ class PythonLanguageServerManager(
 
                 if (obj.has("error")) {
                     val error = obj.getAsJsonObject("error")
-                    Log.e(TAG, "Server error: ${error.get("message").asString}")
-                    deferred?.completeExceptionally(
-                        Exception(error.get("message").asString)
+                    android.util.Log.e(
+                        TAG,
+                        "LSP error response for id=$id: code=${error.get("code")}, message=${error.get("message")}",
                     )
+                    deferred?.completeExceptionally(Exception(error.get("message").asString))
                 } else {
                     val result = obj.get("result")
                     val wrapped = JsonObject()
@@ -493,7 +654,10 @@ class PythonLanguageServerManager(
                 handleNotification(obj)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error handling message", e)
+            android.util.Log.e(
+                TAG,
+                "failed to parse server message: ${e.message} — raw: ${json.take(200)}",
+            )
         }
     }
 
@@ -501,28 +665,26 @@ class PythonLanguageServerManager(
         when (val method = obj.get("method")?.asString ?: return) {
             "textDocument/publishDiagnostics" -> {
                 val params = obj.getAsJsonObject("params") ?: return
-                val uri    = params.get("uri")?.asString ?: return
-                val diags  = params.getAsJsonArray("diagnostics") ?: com.google.gson.JsonArray()
+                val uri = params.get("uri")?.asString ?: return
+                val diags = params.getAsJsonArray("diagnostics") ?: JsonArray()
                 diagnosticsCache[uri] = diags
-                Log.d(TAG, "Cached ${diags.size()} diagnostics for $uri")
             }
             "window/logMessage" -> {
-                val msg = obj.getAsJsonObject("params")?.get("message")?.asString
-                Log.d(TAG, "[pylsp] $msg")
+                val params = obj.getAsJsonObject("params")
+                android.util.Log.i(TAG, "window/logMessage: ${params?.get("message")?.asString}")
             }
             "window/showMessage" -> {
-                val msg = obj.getAsJsonObject("params")?.get("message")?.asString
-                Log.i(TAG, "[pylsp show] $msg")
+                val params = obj.getAsJsonObject("params")
+                android.util.Log.i(TAG, "window/showMessage: ${params?.get("message")?.asString}")
             }
             "$/progress" -> {
-                // Ignore progress tokens
+                /* ignore */
             }
-            else -> Log.v(TAG, "Unhandled notification: $method")
+            else -> {}
         }
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
-    /** Convert a [File] to a `file://` URI string. */
     private fun File.toUri(): String = "file://${absolutePath}"
 }

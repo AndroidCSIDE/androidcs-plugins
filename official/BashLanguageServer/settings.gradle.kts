@@ -29,8 +29,10 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        mavenLocal()
     }
 }
 
 rootProject.name = "BashLanguageServer"
 include("main")
+include("editor")

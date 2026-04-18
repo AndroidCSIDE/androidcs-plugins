@@ -1,7 +1,7 @@
 {
   "name": "PythonLanguageServer",
   "displayName": "Python language server",
-  "description": "Provides Python language server for Android Code Studio\n⚠️ To Activate install pylsp package by running (apt install python3-pylsp -y)",
+  "description": "Provides Python language server for Android Code Studio\n⚠️ To Activate install pyright package by running (install_lsp get python)",
   "version": "1.0",
   "author": "ACS Developer",
   "icon": "icon.png",

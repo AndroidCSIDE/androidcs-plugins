@@ -4,6 +4,11 @@
   "description": "The official repository for Android Code Studio plugins",
   "plugins": [
     {
+      "id": "io.github.nullij.plugins.lsp.web",
+      "name": "WebLanguageServers",
+      "pluginRepository": "https://raw.githubusercontent.com/AndroidCSIDE/androidcs-plugins/refs/heads/main/official/WebLanguageServers/repository.json"
+    },
+    {
       "id": "io.github.nullij.plugins.templates.flutter",
       "name": "FlutterTemplate",
       "pluginRepository": "https://raw.githubusercontent.com/AndroidCSIDE/androidcs-plugins/refs/heads/main/official/FlutterTemplate/repository.json"

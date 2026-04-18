@@ -7,11 +7,15 @@
   "author": "ACS Developer",
   "homepage": "https://github.com/AndroidCSIDE/androidcs-plugins/tree/main/official/PythonLanguageServer",
   "iconUrl": "https://raw.githubusercontent.com/AndroidCSIDE/androidcs-plugins/refs/heads/main/official/PythonLanguageServer/main/meta/icon.png",
-  "latestVersion": "1.0.0",
+  "latestVersion": "1.0",
   "minAcsVersion": "1.0.0",
   "downloadUrl": "https://github.com/AndroidCSIDE/androidcs-plugins/raw/refs/heads/main/official/PythonLanguageServer/PythonLanguageServer.acp",
-  "checksum": "606b2674de664d068ad585ababab6768f703e64a2d3f6a2589997c2263268fd1",
-  "size": 3950473,
-  "lastUpdated": "2026-03-06 17:27:48",
-  "tags": ["intelligence", "language_servers", "development"]
+  "checksum": "598f2c4c9c72a18a9f9e4a3bd6c382c2d333dcc4bd1fd74ce48e74ac3cc093bc",
+  "size": 6010361,
+  "lastUpdated": "2026-04-18 08:37:46",
+  "tags": [
+    "intelligence",
+    "language_servers",
+    "development"
+  ]
 }

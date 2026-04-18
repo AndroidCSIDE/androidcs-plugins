@@ -13,75 +13,81 @@
  *
  *  You should have received a copy of the GNU General Public License
  *   along with AndroidCodeStudio.  If not, see <https://www.gnu.org/licenses/>.
-*/
+ */
 
 package io.github.nullij.plugins.templates.flutter.sources.android.module
 
 import io.github.nullij.plugins.templates.flutter.constants.Constants as CV
-/**
-  * @author nullij @ https://github.com/nullij
- */
+
+/** @author nullij @ https://github.com/nullij */
 object moduleSrcs {
 
-    val mainActivityAsKotlin: String = """
+    val mainActivityAsKotlin: String =
+        """
         package ${CV.packageName}
         
         import io.flutter.embedding.android.FlutterActivity
         
         class MainActivity: FlutterActivity()
-    """.trimIndent()
+    """
+            .trimIndent()
 
-    val mainActivityAsJava: String = """
+    val mainActivityAsJava: String =
+        """
         package  ${CV.packageName};
         
         import io.flutter.embedding.android.FlutterActivity;
         
         public class MainActivity extends FlutterActivity {
         }
-    """.trimIndent()
+    """
+            .trimIndent()
 
-    val AndroidManifestAsXml: String = """
-        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-            <uses-permission android:name="android.permission.INTERNET"/>
-            
-            <application
-                android:label="Flutter M3 Template"
-                android:icon="@mipmap/ic_launcher"
-                android:enableOnBackInvokedCallback="true">
-                <activity
-                    android:name=".MainActivity"
-                    android:exported="true"
-                    android:launchMode="singleTop"
-                    android:taskAffinity=""
-                    android:theme="@style/LaunchTheme"
-                    android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
-                    android:hardwareAccelerated="true"
-                    android:windowSoftInputMode="adjustResize">
+    val AndroidManifestAsXml: String =
+        """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <uses-permission android:name="android.permission.INTERNET"/>
+                
+                <application
+                    android:label="Flutter M3 Template"
+                    android:icon="@mipmap/ic_launcher"
+                    android:enableOnBackInvokedCallback="true">
+                    <activity
+                        android:name=".MainActivity"
+                        android:exported="true"
+                        android:launchMode="singleTop"
+                        android:taskAffinity=""
+                        android:theme="@style/LaunchTheme"
+                        android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+                        android:hardwareAccelerated="true"
+                        android:windowSoftInputMode="adjustResize">
+                        <meta-data
+                          android:name="io.flutter.embedding.android.NormalTheme"
+                          android:resource="@style/NormalTheme"
+                          />
+                        <intent-filter>
+                            <action android:name="android.intent.action.MAIN"/>
+                            <category android:name="android.intent.category.LAUNCHER"/>
+                        </intent-filter>
+                    </activity>
                     <meta-data
-                      android:name="io.flutter.embedding.android.NormalTheme"
-                      android:resource="@style/NormalTheme"
-                      />
-                    <intent-filter>
-                        <action android:name="android.intent.action.MAIN"/>
-                        <category android:name="android.intent.category.LAUNCHER"/>
-                    </intent-filter>
-                </activity>
-                <meta-data
-                    android:name="flutterEmbedding"
-                    android:value="2" />
-            </application>
-            <queries>
-                <intent>
-                    <action android:name="android.intent.action.VIEW" />
-                    <data android:scheme="https" />
-                </intent>
-            </queries>
-        </manifest>
-    """.trimIndent()
+                        android:name="flutterEmbedding"
+                        android:value="2" />
+                </application>
+                <queries>
+                    <intent>
+                        <action android:name="android.intent.action.VIEW" />
+                        <data android:scheme="https" />
+                    </intent>
+                </queries>
+            </manifest>
+        """
+            .trimIndent()
 
     /* Groovy (app/build.gradle) */
     val buildGradleSrcAsGroovy: String
-        get() = """
+        get() =
+            """
         plugins {
             id "com.android.application"
             id "kotlin-android"
@@ -158,11 +164,13 @@ object moduleSrcs {
         dependencies {
             implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${CV.jetbrainsAndroidKotlinVersion}"
         }
-    """.trimIndent()
+    """
+                .trimIndent()
 
     /* Kotlin DSL (app/build.gradle.kts) */
     val buildGradleSrcAsKts: String
-        get() = """
+        get() =
+            """
         import java.util.Properties
         
         plugins {
@@ -239,54 +247,59 @@ object moduleSrcs {
         dependencies {
             implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${CV.jetbrainsAndroidKotlinVersion}")
         }
-    """.trimIndent()
+    """
+                .trimIndent()
 
-    val cmakeListAsTxt: String = """
-        cmake_minimum_required(VERSION 3.31.6)
-        project(flutter_m3_template)
-        
-        # This CMakeLists.txt is a placeholder for native code integration
-        # Add your native C/C++ source files here when needed
-        
-        # Example:
-        # add_library(native_lib SHARED native_lib.cpp)
-        # target_link_libraries(native_lib ${'$'}{log-lib})
-    """.trimIndent()
-    
-    val proguardRulesAsPro: String = """
-        # Add project specific ProGuard rules here.
-        # By default, the flags in this file are appended to flags specified
-        # in /usr/local/Cellar/android-sdk/24.3.3/tools/proguard/proguard-android.txt
-        # You can edit the include path and order by changing the proguardFiles
-        # directive in build.gradle.
-        #
-        # For more details, see
-        #   http://developer.android.com/guide/developing/tools/proguard.html
-        
-        # Add any project specific keep options here:
-        
-        # If your project uses WebView with JS, uncomment the following
-        # and specify the fully qualified class name to the JavaScript interface
-        # class:
-        #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-        #   public *;
-        #}
-        
-        # Uncomment this to preserve the line number information for
-        # debugging stack traces.
-        #-keepattributes SourceFile,LineNumberTable
-        
-        # If you keep the line number information, uncomment this to
-        # hide the original source file name.
-        #-renamesourcefileattribute SourceFile
-        
-        # Flutter wrapper
-        -keep class io.flutter.app.** { *; }
-        -keep class io.flutter.plugin.**  { *; }
-        -keep class io.flutter.util.**  { *; }
-        -keep class io.flutter.view.**  { *; }
-        -keep class io.flutter.**  { *; }
-        -keep class io.flutter.plugins.**  { *; }
-        -dontwarn io.flutter.embedding.**
-    """.trimIndent()
+    val cmakeListAsTxt: String =
+        """
+            cmake_minimum_required(VERSION 3.31.6)
+            project(flutter_m3_template)
+            
+            # This CMakeLists.txt is a placeholder for native code integration
+            # Add your native C/C++ source files here when needed
+            
+            # Example:
+            # add_library(native_lib SHARED native_lib.cpp)
+            # target_link_libraries(native_lib ${'$'}{log-lib})
+        """
+            .trimIndent()
+
+    val proguardRulesAsPro: String =
+        """
+            # Add project specific ProGuard rules here.
+            # By default, the flags in this file are appended to flags specified
+            # in /usr/local/Cellar/android-sdk/24.3.3/tools/proguard/proguard-android.txt
+            # You can edit the include path and order by changing the proguardFiles
+            # directive in build.gradle.
+            #
+            # For more details, see
+            #   http://developer.android.com/guide/developing/tools/proguard.html
+            
+            # Add any project specific keep options here:
+            
+            # If your project uses WebView with JS, uncomment the following
+            # and specify the fully qualified class name to the JavaScript interface
+            # class:
+            #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
+            #   public *;
+            #}
+            
+            # Uncomment this to preserve the line number information for
+            # debugging stack traces.
+            #-keepattributes SourceFile,LineNumberTable
+            
+            # If you keep the line number information, uncomment this to
+            # hide the original source file name.
+            #-renamesourcefileattribute SourceFile
+            
+            # Flutter wrapper
+            -keep class io.flutter.app.** { *; }
+            -keep class io.flutter.plugin.**  { *; }
+            -keep class io.flutter.util.**  { *; }
+            -keep class io.flutter.view.**  { *; }
+            -keep class io.flutter.**  { *; }
+            -keep class io.flutter.plugins.**  { *; }
+            -dontwarn io.flutter.embedding.**
+        """
+            .trimIndent()
 }
