@@ -2,7 +2,7 @@
   "components": {
     "kotlin-language-server": {
       "versionCode": null,
-      "version": "v261.13587.0",
+      "version": "v262.4739.0",
       "zipUrl": "https://github.com/AndroidCSIDE/androidcs-plugins/releases/download/experimental-features/jetbrains-ktlsp.zip"
     }
   }

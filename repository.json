@@ -5,6 +5,11 @@
   "plugins": [
     {
       "id": "io.github.nullij.plugins.lsp.web",
+      "name": "ClangLanguageServer",
+      "pluginRepository": "https://raw.githubusercontent.com/AndroidCSIDE/androidcs-plugins/refs/heads/main/official/ClangLanguageServer/repository.json"
+    },
+    {
+      "id": "io.github.nullij.plugins.lsp.clang",
       "name": "WebLanguageServers",
       "pluginRepository": "https://raw.githubusercontent.com/AndroidCSIDE/androidcs-plugins/refs/heads/main/official/WebLanguageServers/repository.json"
     },
