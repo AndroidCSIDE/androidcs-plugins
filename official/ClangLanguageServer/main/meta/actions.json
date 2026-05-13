@@ -5,7 +5,7 @@
       "id": "action_Clang_lsp",
       "type": "plugin_action",
       "title": "Clang Language Server",
-      "description": "Registers and starts the Clang language server (pylsp) for code intelligence in c/c++ files",
+      "description": "Registers and starts the Clang language server for code intelligence in c/c++ files",
       "iconName": "Code",
       "showIn": ["onEditorActivityLaunched"],
       "priority": 50,
