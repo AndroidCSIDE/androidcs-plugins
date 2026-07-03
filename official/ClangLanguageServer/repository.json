@@ -10,9 +10,9 @@
   "latestVersion": "1.0",
   "minAcsVersion": "1.0.0",
   "downloadUrl": "https://github.com/AndroidCSIDE/androidcs-plugins/raw/refs/heads/main/official/ClangLanguageServer/ClangLanguageServer.acp",
-  "checksum": "71ebe7dee0b48c7f495e7da9eaa001ec855e21f5ea264f0f5fae3e1eed12f9f5",
-  "size": 9096409,
-  "lastUpdated": "2026-05-13 11:44:27",
+  "checksum": "44ed0000fc84d9ac416c55a7754714262568f56d7ddf2471f03956ef6721565d",
+  "size": 12104009,
+  "lastUpdated": "2026-06-10 19:55:16",
   "tags": [
     "intelligence",
     "language_servers",

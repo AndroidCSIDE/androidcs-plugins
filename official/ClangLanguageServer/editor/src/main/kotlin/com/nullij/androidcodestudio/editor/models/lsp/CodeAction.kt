@@ -110,7 +110,13 @@ enum class CodeActionKind(val value: String) {
     SOURCE_ORGANIZE_IMPORTS("source.organizeImports"),
     
     /** Base kind for fix all source action */
-    SOURCE_FIX_ALL("source.fixAll");
+    SOURCE_FIX_ALL("source.fixAll"),
+
+    /** Base kind for removing unused imports source action */
+    SOURCE_REMOVE_UNUSED_IMPORTS("source.removeUnusedImports"),
+
+    /** Base kind for adding missing imports source action */
+    SOURCE_ADD_MISSING_IMPORTS("source.addMissingImports");
 
     companion object {
         fun fromValue(value: String): CodeActionKind? {

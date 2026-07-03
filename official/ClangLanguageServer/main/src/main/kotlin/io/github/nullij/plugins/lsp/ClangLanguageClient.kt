@@ -19,6 +19,7 @@ package io.github.nullij.plugins.lsp
 
 import com.google.gson.Gson
 import com.google.gson.JsonArray
+import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.nullij.androidcodestudio.editor.models.lsp.*
 import com.nullij.androidcodestudio.plugins.api.LanguageServerClient
@@ -48,10 +49,21 @@ import kotlinx.coroutines.*
  * @author nullij @ https://github.com/nullij
  */
 class ClangLanguageClient(private val manager: ClangLanguageServerManager) :
-    LanguageServerClient, LanguageClient {
+    LanguageServerClient, LanguageClient, WorkspaceEditApplierSink {
 
     private val gson = Gson()
     private val tag = "ClangLSP"
+
+    @Volatile
+    private var workspaceEditApplier: ((WorkspaceEdit) -> Unit)? = null
+
+    override fun setWorkspaceEditApplier(applier: ((WorkspaceEdit) -> Unit)?) {
+        workspaceEditApplier = applier
+    }
+
+    internal fun dispatchApplyEditFromServer(edit: WorkspaceEdit) {
+        workspaceEditApplier?.invoke(edit)
+    }
 
     override suspend fun getCompletions(
         uri: String,
@@ -371,9 +383,10 @@ class ClangLanguageClient(private val manager: ClangLanguageServerManager) :
                     add(JsonObject().apply {
                         add("range", diag.range.toJson())
                         addProperty("message", diag.message)
-                        diag.severity?.let { addProperty("severity", it.value) }
+                        addProperty("severity", diag.severity.value)
                         diag.source?.let { addProperty("source", it) }
                         diag.code?.let { addProperty("code", it) }
+                        if (diag.fixAvailable == true) addProperty("fixAvailable", true)
                     })
                 }
             }
@@ -381,7 +394,14 @@ class ClangLanguageClient(private val manager: ClangLanguageServerManager) :
             val params = JsonObject().apply {
                 add("textDocument", JsonObject().apply { addProperty("uri", uri) })
                 add("range", range.toJson())
-                add("context", JsonObject().apply { add("diagnostics", diagnosticsArray) })
+                add("context", JsonObject().apply {
+                    add("diagnostics", diagnosticsArray)
+                    if (context.only.isNotEmpty()) {
+                        add("only", JsonArray().apply {
+                            context.only.forEach { add(it.value) }
+                        })
+                    }
+                })
             }
 
             val response = manager.sendRequest("textDocument/codeAction", params)
@@ -389,25 +409,127 @@ class ClangLanguageClient(private val manager: ClangLanguageServerManager) :
 
             result.asJsonArray.mapNotNull { el ->
                 try {
-                    val obj = el.asJsonObject
-                    val title = obj.get("title")?.asString ?: return@mapNotNull null
-                    val kind = obj.get("kind")
-                        ?.takeIf { !it.isJsonNull }
-                        ?.asString
-                        ?.let { CodeActionKind.fromValue(it) }
-                    CodeAction(
-                        title = title,
-                        kind = kind,
-                        diagnostics = emptyList(),
-                        edit = null,
-                        command = null,
-                    )
+                    val raw = el.asJsonObject
+                    val resolved = resolveCodeActionIfNeeded(raw)
+                    parseCodeActionFromJson(resolved)
                 } catch (e: Exception) {
                     null
                 }
             }
         } catch (e: Exception) {
             emptyList()
+        }
+    }
+
+    override suspend fun executeCommand(command: LspCommand): Boolean {
+        return try {
+            val argsArray = JsonArray()
+            command.arguments.forEach { argsArray.add(it) }
+            val params = JsonObject().apply {
+                addProperty("command", command.command)
+                add("arguments", argsArray)
+            }
+            val response = manager.sendRequest("workspace/executeCommand", params)
+            response != null && !response.has("error")
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    private suspend fun resolveCodeActionIfNeeded(action: JsonObject): JsonObject {
+        val hasEdit = action.has("edit") && !action.get("edit").isJsonNull
+        if (hasEdit) return action
+
+        val hasData = action.has("data") && !action.get("data").isJsonNull
+        if (!hasData) return action
+
+        return try {
+            val params = JsonObject().apply {
+                add("codeAction", gson.fromJson(gson.toJson(action), JsonObject::class.java))
+            }
+            val response = manager.sendRequest("codeAction/resolve", params) ?: return action
+            if (response.has("error")) return action
+            response.getAsJsonObject("result") ?: action
+        } catch (_: Exception) {
+            action
+        }
+    }
+
+    private fun parseCodeActionFromJson(obj: JsonObject): CodeAction? {
+        val title = obj.get("title")?.asString ?: return null
+        val kind = obj.get("kind")
+            ?.takeIf { !it.isJsonNull }
+            ?.asString
+            ?.let { CodeActionKind.fromValue(it) }
+        val edit = if (obj.has("edit") && !obj.get("edit").isJsonNull) {
+            parseWorkspaceEditFromJson(obj.getAsJsonObject("edit"))
+        } else null
+        val command = parseCommandFromCodeActionJson(obj)
+        return CodeAction(
+            title = title,
+            kind = kind,
+            diagnostics = emptyList(),
+            edit = edit,
+            command = command,
+        )
+    }
+
+    private fun parseWorkspaceEditFromJson(editObj: JsonObject): WorkspaceEdit {
+        val changes = mutableMapOf<String, List<TextEdit>>()
+        val changesEl = editObj.get("changes")
+        if (changesEl != null && changesEl.isJsonObject) {
+            changesEl.asJsonObject.entrySet().forEach { (fileUri, editsEl) ->
+                if (editsEl.isJsonArray) {
+                    changes[fileUri] = editsEl.asJsonArray.mapNotNull { parseTextEdit(it.asJsonObject) }
+                }
+            }
+        }
+        val docChanges = editObj.get("documentChanges")
+        if (docChanges != null && docChanges.isJsonArray) {
+            for (el in docChanges.asJsonArray) {
+                val co = el.asJsonObject
+                if (!co.has("textDocument") || !co.has("edits")) continue
+                val docUri = co.getAsJsonObject("textDocument").get("uri")?.asString ?: continue
+                val list = co.getAsJsonArray("edits").mapNotNull { te ->
+                    val teObj = te.asJsonObject
+                    if (teObj.has("range")) parseTextEdit(teObj) else null
+                }
+                changes[docUri] = (changes[docUri] ?: emptyList()) + list
+            }
+        }
+        return WorkspaceEdit(changes = changes)
+    }
+
+    private fun parseCommandFromCodeActionJson(codeAction: JsonObject): Command? {
+        val cmdEl = codeAction.get("command") ?: return null
+        if (cmdEl.isJsonNull) return null
+
+        return when {
+            cmdEl.isJsonObject -> {
+                val cmdObj = cmdEl.asJsonObject
+                val cmdId = cmdObj.get("command")?.asString ?: return null
+                val cmdTitle = cmdObj.get("title")?.asString
+                    ?: codeAction.get("title")?.asString
+                    ?: ""
+                val args = if (cmdObj.has("arguments") && cmdObj.get("arguments").isJsonArray) {
+                    cmdObj.getAsJsonArray("arguments").map { it as Any }
+                } else {
+                    emptyList()
+                }
+                Command(title = cmdTitle, command = cmdId, arguments = args)
+            }
+            cmdEl.isJsonPrimitive -> {
+                Command(
+                    title = codeAction.get("title")?.asString ?: "",
+                    command = cmdEl.asString,
+                    arguments = if (codeAction.has("arguments") && codeAction.get("arguments").isJsonArray) {
+                        codeAction.getAsJsonArray("arguments").map { it as Any }
+                    } else {
+                        emptyList()
+                    },
+                )
+            }
+            else -> null
         }
     }
 
@@ -518,12 +640,15 @@ class ClangLanguageClient(private val manager: ClangLanguageServerManager) :
                 val code = obj.get("code")
                     ?.takeIf { !it.isJsonNull }
                     ?.let { if (it.isJsonPrimitive) it.asString else null }
+                val fixAvailable = obj.get("fixAvailable")?.takeIf { !it.isJsonNull }?.asBoolean
+                    ?: if (message.contains("(fix available)", ignoreCase = true)) true else null
                 Diagnostic(
                     range = range,
                     message = message,
                     severity = severity,
                     source = obj.get("source")?.takeIf { !it.isJsonNull }?.asString,
                     code = code,
+                    fixAvailable = fixAvailable,
                 )
             } catch (e: Exception) {
                 null
@@ -533,7 +658,7 @@ class ClangLanguageClient(private val manager: ClangLanguageServerManager) :
 
     private fun parseTextEdit(obj: JsonObject): TextEdit? {
         val range = obj.getAsJsonObject("range") ?: return null
-        val newText = obj.get("newText")?.asString ?: return null
+        val newText = obj.get("newText")?.asString ?: ""
         return TextEdit(range = parseRange(range), newText = newText)
     }
 

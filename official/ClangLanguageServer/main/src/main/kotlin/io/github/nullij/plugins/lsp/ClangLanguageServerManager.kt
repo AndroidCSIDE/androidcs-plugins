@@ -251,6 +251,27 @@ class ClangLanguageServerManager(private val clangdPath: String) : PluginLanguag
                         })
                         add("codeAction", JsonObject().apply {
                             addProperty("dynamicRegistration", false)
+                            addProperty("isPreferredSupport", true)
+                            addProperty("disabledSupport", false)
+                            add("codeActionLiteralSupport", JsonObject().apply {
+                                add("codeActionKind", JsonObject().apply {
+                                    add("valueSet", JsonArray().apply {
+                                        add("")
+                                        add("quickfix")
+                                        add("refactor")
+                                        add("refactor.extract")
+                                        add("refactor.inline")
+                                        add("refactor.rewrite")
+                                        add("source")
+                                        add("source.organizeImports")
+                                    })
+                                })
+                            })
+                            add("resolveSupport", JsonObject().apply {
+                                add("properties", JsonArray().apply {
+                                    add("edit")
+                                })
+                            })
                         })
                         add("inlayHint", JsonObject().apply {
                             addProperty("dynamicRegistration", false)
@@ -260,7 +281,7 @@ class ClangLanguageServerManager(private val clangdPath: String) : PluginLanguag
                         })
                     })
                     add("workspace", JsonObject().apply {
-                        addProperty("applyEdit", false)
+                        addProperty("applyEdit", true)
                     })
                 })
             }
@@ -437,6 +458,10 @@ class ClangLanguageServerManager(private val clangdPath: String) : PluginLanguag
             val obj = gson.fromJson(json, JsonObject::class.java)
 
             if (obj.has("id")) {
+                if (obj.has("method")) {
+                    handleServerRequest(obj)
+                    return
+                }
                 val id = obj.get("id").asInt
                 val deferred = pendingRequests.remove(id)
 
@@ -455,6 +480,132 @@ class ClangLanguageServerManager(private val clangdPath: String) : PluginLanguag
             }
         } catch (e: Exception) {
             android.util.Log.e(TAG, "failed to parse server message: ${e.message} — raw: ${json.take(200)}")
+        }
+    }
+
+    private fun handleServerRequest(obj: JsonObject) {
+        val method = obj.get("method")?.asString ?: return
+        val id = obj.get("id")?.takeIf { !it.isJsonNull }?.asInt ?: return
+        when (method) {
+            "workspace/applyEdit" -> {
+                try {
+                    val params = obj.get("params")?.asJsonObject
+                    if (params == null) {
+                        sendApplyEditResponse(id, applied = false)
+                        return
+                    }
+                    val editObj = params.get("edit")?.asJsonObject
+                    if (editObj == null) {
+                        sendApplyEditResponse(id, applied = false)
+                        return
+                    }
+                    val changes = mutableMapOf<String, List<com.nullij.androidcodestudio.editor.models.lsp.TextEdit>>()
+
+                    if (editObj.has("documentChanges") && !editObj.get("documentChanges").isJsonNull) {
+                        editObj.getAsJsonArray("documentChanges").forEach { changeEl ->
+                            try {
+                                val changeObj = changeEl.asJsonObject
+                                if (!changeObj.has("textDocument") || !changeObj.has("edits")) return@forEach
+                                val fileUri = changeObj.getAsJsonObject("textDocument").get("uri")?.asString
+                                    ?: return@forEach
+                                val list = changeObj.getAsJsonArray("edits").mapNotNull { editEl ->
+                                    parseApplyEditTextEdit(editEl.asJsonObject)
+                                }
+                                changes[fileUri] = (changes[fileUri] ?: emptyList()) + list
+                            } catch (_: Exception) { }
+                        }
+                    }
+                    if (changes.isEmpty() && editObj.has("changes") && !editObj.get("changes").isJsonNull) {
+                        editObj.getAsJsonObject("changes").entrySet().forEach { (fileUri, editsEl) ->
+                            try {
+                                if (!editsEl.isJsonArray) return@forEach
+                                changes[fileUri] = editsEl.asJsonArray.mapNotNull { el ->
+                                    parseApplyEditTextEdit(el.asJsonObject)
+                                }
+                            } catch (_: Exception) { }
+                        }
+                    }
+
+                    val workspaceEdit = com.nullij.androidcodestudio.editor.models.lsp.WorkspaceEdit(changes = changes)
+                    client?.dispatchApplyEditFromServer(workspaceEdit)
+                    sendApplyEditResponse(id, applied = true)
+                } catch (e: Exception) {
+                    android.util.Log.e(TAG, "workspace/applyEdit failed", e)
+                    sendApplyEditResponse(id, applied = false)
+                }
+            }
+            else -> {
+                android.util.Log.w(TAG, "Unhandled server request: $method")
+                sendErrorResponse(id, -32601, "Method not found: $method")
+            }
+        }
+    }
+
+    private fun parseApplyEditTextEdit(editObj: com.google.gson.JsonObject): com.nullij.androidcodestudio.editor.models.lsp.TextEdit? {
+        return try {
+            val rangeObj = editObj.getAsJsonObject("range") ?: return null
+            val start = rangeObj.getAsJsonObject("start")
+            val end = rangeObj.getAsJsonObject("end")
+            com.nullij.androidcodestudio.editor.models.lsp.TextEdit(
+                range = com.nullij.androidcodestudio.editor.models.lsp.Range(
+                    start = com.nullij.androidcodestudio.editor.models.lsp.Position(
+                        line = start.get("line").asInt,
+                        character = start.get("character").asInt,
+                    ),
+                    end = com.nullij.androidcodestudio.editor.models.lsp.Position(
+                        line = end.get("line").asInt,
+                        character = end.get("character").asInt,
+                    ),
+                ),
+                newText = editObj.get("newText")?.asString ?: "",
+            )
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun sendApplyEditResponse(id: Int, applied: Boolean) {
+        try {
+            val response = JsonObject().apply {
+                addProperty("jsonrpc", "2.0")
+                addProperty("id", id)
+                add("result", JsonObject().apply {
+                    addProperty("applied", applied)
+                })
+            }
+            val json = gson.toJson(response)
+            val bytes = json.toByteArray(StandardCharsets.UTF_8)
+            val header = "Content-Length: ${bytes.size}\r\n\r\n"
+            synchronized(writer!!) {
+                writer?.write(header)
+                writer?.write(json)
+                writer?.flush()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "Failed to send applyEdit response", e)
+        }
+    }
+
+    private fun sendErrorResponse(id: Int, code: Int, message: String) {
+        try {
+            val response = JsonObject().apply {
+                addProperty("jsonrpc", "2.0")
+                addProperty("id", id)
+                add("error", JsonObject().apply {
+                    addProperty("code", code)
+                    addProperty("message", message)
+                })
+            }
+            val json = gson.toJson(response)
+            val bytes = json.toByteArray(StandardCharsets.UTF_8)
+            val header = "Content-Length: ${bytes.size}\r\n\r\n"
+            synchronized(writer!!) {
+                writer?.write(header)
+                writer?.write(json)
+                writer?.flush()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "Failed to send error response", e)
         }
     }
 

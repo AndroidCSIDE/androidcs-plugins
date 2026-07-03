@@ -91,6 +91,36 @@ object ClangLanguageServer {
         }
     }
 
+    private fun writeClangTidyConfig(projectDir: java.io.File) {
+        val config = java.io.File(projectDir, ".clang-tidy")
+        if (config.exists()) return
+        config.writeText("""
+            Checks: >
+              clang-diagnostic-*,
+              clang-analyzer-*,
+              bugprone-*,
+              modernize-*,
+              performance-*,
+              readability-*,
+              -modernize-use-trailing-return-type,
+              -readability-magic-numbers
+            WarningsAsErrors: ''
+            HeaderFilterRegex: '.*'
+            FormatStyle: file
+        """.trimIndent())
+    }
+
+    private fun writeClangdConfig(projectDir: java.io.File) {
+        val config = java.io.File(projectDir, ".clangd")
+        if (config.exists()) return
+        config.writeText("""
+            CompileFlags:
+              Add:
+                - "-I${projectDir.absolutePath}"
+              CompilationDatabase: "${projectDir.absolutePath}"
+        """.trimIndent())
+    }
+
     private fun showInstallDialog() {
         mainHandler.post {
             PluginApi.ui?.showOverlay { handle ->
@@ -161,6 +191,12 @@ object ClangLanguageServer {
         lsp.registerExtension("hxx", "c")
         lsp.registerExtension("hh", "c")
         lsp.registerExtension("ixx", "c")
+    
+        val projectDir = PluginApi.environment.openProjectDir
+        if (projectDir != null) {
+            writeClangTidyConfig(projectDir)
+            writeClangdConfig(projectDir)
+        }
     
         lsp.registerServer("c", ClangLanguageServerManager(clangdPath))
         serverRegistered = true
