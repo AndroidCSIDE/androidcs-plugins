@@ -5,7 +5,7 @@
   "description": "Registers and starts the Bash language server for code intelligence in shell scripts files",
   "category": "Development Tools",
   "author": "ACS Developer",
-  "homepage": "https://github.com/AndroidCSIDE/androidcs-plugins/tree/main/official/BashLanguageServer",
+  "homepage": "https://github.com/AndroidCSIDE/androidcs-plugins/tree/acside/official/BashLanguageServer",
   "iconUrl": "https://raw.githubusercontent.com/AndroidCSIDE/androidcs-plugins/refs/heads/acside/official/BashLanguageServer/main/meta/icon.png",
   "latestVersion": "1.0",
   "minAcsVersion": "1.0.0",

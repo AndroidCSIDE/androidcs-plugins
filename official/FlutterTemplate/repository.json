@@ -5,7 +5,7 @@
   "description": "Basic flutter activity",
   "category": "Development Tools",
   "author": "ACS Developer",
-  "homepage": "https://github.com/AndroidCSIDE/androidcs-plugins/tree/main/official/FlutterTemplate",
+  "homepage": "https://github.com/AndroidCSIDE/androidcs-plugins/tree/acside/official/FlutterTemplate",
   "iconUrl": "https://raw.githubusercontent.com/AndroidCSIDE/androidcs-plugins/refs/heads/acside/official/FlutterTemplate/main/meta/icon.png",
   "latestVersion": "1.1",
   "minAcsVersion": "1.0.0",

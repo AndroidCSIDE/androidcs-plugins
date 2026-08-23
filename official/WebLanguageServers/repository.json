@@ -5,7 +5,7 @@
   "description": "Registers and starts the HTML, CSS, TS, Json, JS language servers for code intelligence in web development files",
   "category": "Development Tools",
   "author": "ACS Developer",
-  "homepage": "https://github.com/AndroidCSIDE/androidcs-plugins/tree/main/official/WebLanguageServers",
+  "homepage": "https://github.com/AndroidCSIDE/androidcs-plugins/tree/acside/official/WebLanguageServers",
   "iconUrl": "https://raw.githubusercontent.com/AndroidCSIDE/androidcs-plugins/refs/heads/acside/official/WebLanguageServers/main/meta/icon.png",
   "latestVersion": "1.0",
   "minAcsVersion": "1.0.0",
