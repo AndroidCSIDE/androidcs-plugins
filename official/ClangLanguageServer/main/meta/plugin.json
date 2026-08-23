@@ -1,0 +1,11 @@
+{
+  "name": "ClangLanguageServer",
+  "displayName": "Clang language server",
+  "description": "Provides Clang language server for Android Code Studio\n⚠️ To Activate install clangd package by running (install_lsp get clang)",
+  "version": "1.0",
+  "author": "ACS Developer",
+  "configurable": true,
+  "configureClass": "io.github.nullij.plugins.lsp.ClangLanguageServer",
+  "icon": "icon.png",
+  "enabled": true
+}

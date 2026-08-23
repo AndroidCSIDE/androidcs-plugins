@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "actions": [
+    {
+      "id": "action_python_lsp",
+      "type": "plugin_action",
+      "title": "Python Language Server",
+      "description": "Registers and starts the Python language server (pylsp) for code intelligence in .py files",
+      "iconName": "Code",
+      "showIn": ["onEditorActivityLaunched"],
+      "priority": 50,
+      "pluginConfig": {
+        "pluginPath": "PythonLanguageServer/plugin.apk",
+        "className": "io.github.nullij.plugins.lsp.PythonLanguageServer",
+        "methodName": "getContext",
+        "methodType": "static"
+      }
+    }
+  ]
+}

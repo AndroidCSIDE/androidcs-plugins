@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "templates": [
+    {
+      "displayName": "Flutter Activity",
+      "description": "Basic flutter activity",
+      "templateType": "activity",
+      "icon": "flutter_activity.png",
+      "pluginConfig": {
+        "pluginPath": "plugins/FlutterTemplate/plugin.apk",
+        "className": "io.github.nullij.plugins.templates.flutter.FlutterTemplateCreator",
+        "methodName": "create"
+      }
+    }
+  ]
+}

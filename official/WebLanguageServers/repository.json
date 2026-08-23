@@ -1,0 +1,21 @@
+{
+  "id": "io.github.nullij.plugins.lsp",
+  "name": "WebLanguageServers",
+  "displayName": "Web language servers bundle",
+  "description": "Registers and starts the HTML, CSS, TS, Json, JS language servers for code intelligence in web development files",
+  "category": "Development Tools",
+  "author": "ACS Developer",
+  "homepage": "https://github.com/AndroidCSIDE/androidcs-plugins/tree/main/official/WebLanguageServers",
+  "iconUrl": "https://raw.githubusercontent.com/AndroidCSIDE/androidcs-plugins/refs/heads/main/official/WebLanguageServers/main/meta/icon.png",
+  "latestVersion": "1.0",
+  "minAcsVersion": "1.0.0",
+  "downloadUrl": "https://github.com/AndroidCSIDE/androidcs-plugins/raw/refs/heads/main/official/WebLanguageServers/WebLanguageServers.acp",
+  "checksum": "170d1e43c794b145f4d85e4108f3f3a8f5e4b05f01221b58913cf30d32a625b6",
+  "size": 6023753,
+  "lastUpdated": "2026-08-23 14:36:56",
+  "tags": [
+    "intelligence",
+    "language_servers",
+    "development"
+  ]
+}

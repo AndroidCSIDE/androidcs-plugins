@@ -1,0 +1,21 @@
+{
+  "id": "io.github.nullij.plugins.lsp.clang",
+  "name": "ClangLanguageServer",
+  "displayName": "Clang language server",
+  "description": "Registers and starts the Clang language server for code intelligence in c/c++ files",
+  "category": "Development Tools",
+  "author": "ACS Developer",
+  "homepage": "https://github.com/AndroidCSIDE/androidcs-plugins/tree/main/official/ClangLanguageServer",
+  "iconUrl": "https://raw.githubusercontent.com/AndroidCSIDE/androidcs-plugins/refs/heads/main/official/ClangLanguageServer/main/meta/icon.png",
+  "latestVersion": "1.0",
+  "minAcsVersion": "1.0.0",
+  "downloadUrl": "https://github.com/AndroidCSIDE/androidcs-plugins/raw/refs/heads/main/official/ClangLanguageServer/ClangLanguageServer.acp",
+  "checksum": "1887f99744a01ac7ad53686d9abae81a94ec839cc76bb801b7767aaf92c2b826",
+  "size": 12106393,
+  "lastUpdated": "2026-08-23 14:42:35",
+  "tags": [
+    "intelligence",
+    "language_servers",
+    "development"
+  ]
+}

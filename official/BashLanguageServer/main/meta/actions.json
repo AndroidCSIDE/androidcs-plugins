@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "actions": [
+    {
+      "id": "action_bash_lsp",
+      "type": "plugin_action",
+      "title": "Bash Language Server",
+      "description": "Registers and starts the Bash language server for code intelligence in .sh files",
+      "iconName": "Code",
+      "showIn": ["onEditorActivityLaunched"],
+      "priority": 50,
+      "pluginConfig": {
+        "pluginPath": "BashLanguageServer/plugin.apk",
+        "className": "io.github.nullij.plugins.lsp.BashLanguageServer",
+        "methodName": "getContext",
+        "methodType": "static"
+      }
+    }
+  ]
+}
