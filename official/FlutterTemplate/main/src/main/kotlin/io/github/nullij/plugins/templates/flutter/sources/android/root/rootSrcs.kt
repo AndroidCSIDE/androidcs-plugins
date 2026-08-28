@@ -21,6 +21,8 @@ import io.github.nullij.plugins.templates.flutter.constants.Constants as CV
 
 /** @author nullij @ https://github.com/nullij */
 object rootSrcs {
+    
+    val homeDir = "/data/data/com.acside/files/home"
 
     /* Groovy (settings.gradle) */
     val settingsSrcAsGroovy: String =
@@ -160,9 +162,9 @@ object rootSrcs {
     /* Local properties */
     val localPropertiesAsProps: String =
         """
-            sdk.dir=/root/Android/Sdk
-            flutter.sdk=/root/flutter
-            cmake.dir=/home/Android/Sdk/cmake/4.3.0
+            sdk.dir=${homeDir}/android-sdk
+            flutter.sdk=${homeDir}/flutter
+            cmake.dir=${homeDir}/android-sdk/cmake/4.1.2
         """
             .trimIndent()
 
@@ -175,7 +177,7 @@ object rootSrcs {
             systemProp.user.language=en
             org.gradle.daemon=true
             org.gradle.parallel=true
-            org.gradle.jvmargs=-Dfile.encoding\=UTF-8 -Dsun.jnu.encoding\=UTF-8 -Duser.language\=en -Duser.country\=US -Xmx2048m -XX\:MaxMetaspaceSize\=512m -XX\:+HeapDumpOnOutOfMemoryError
+            org.gradle.jvmargs=-Dfile.encoding\=UTF-8 -Dsun.jnu.encoding\=UTF-8 -Duser.language\=en -Duser.country\=US -Xmx4048m -XX\:MaxMetaspaceSize\=512m -XX\:+HeapDumpOnOutOfMemoryError
             android.enableJetifier=true
             android.useAndroidX=true
             android.defaults.buildfeatures.buildconfig=true
