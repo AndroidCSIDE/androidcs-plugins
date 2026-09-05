@@ -17,15 +17,22 @@
 
 package com.nullij.androidcodestudio.editor.models.lsp
 
-import com.google.gson.JsonElement
-
 /**
- * Data class LspCommand.
+ * Enum class FoldingRangeKind.
  *
  * @author nullij @ https://github.com/nullij
  */
-data class LspCommand(
-    val title: String,
-    val command: String,
-    val arguments: List<JsonElement> = emptyList(),
-)
+enum class FoldingRangeKind {
+
+  /** Class COMMENT. */
+  COMMENT,
+
+  /** Class IMPORTS. */
+  IMPORTS,
+
+  /** Class REGION. */
+  REGION,
+}
+
+/** Data class FoldingRange. */
+data class FoldingRange(val start: Position, val end: Position, val kind: FoldingRangeKind? = null)

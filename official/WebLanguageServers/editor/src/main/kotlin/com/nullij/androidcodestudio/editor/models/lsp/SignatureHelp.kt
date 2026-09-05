@@ -1,100 +1,144 @@
+/*
+ *  This file is part of ACSIDE.
+ *
+ *  ACSIDE is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  ACSIDE is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *   along with ACSIDE.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package com.nullij.androidcodestudio.editor.models.lsp
 
-/** Signature help represents the signature of something callable */
+/**
+ * Data class SignatureHelp.
+ *
+ * @author nullij @ https://github.com/nullij
+ */
 data class SignatureHelp(
-    /** One or more signatures */
     val signatures: List<SignatureInformation>,
-
-    /** The active signature. If omitted or index is out of range, defaults to zero */
     val activeSignature: Int = 0,
-
-    /** The active parameter of the active signature */
     val activeParameter: Int = 0,
 ) {
-    /** Get the currently active signature */
-    fun getActiveSignatureInfo(): SignatureInformation? {
-        return signatures.getOrNull(activeSignature)
-    }
 
-    /** Get the currently active parameter */
-    fun getActiveParameterInfo(): ParameterInformation? {
-        return getActiveSignatureInfo()?.parameters?.getOrNull(activeParameter)
-    }
+  /**
+   * Retrieves the active signature info
+   *
+   * @return the signature information
+   */
+  fun getActiveSignatureInfo(): SignatureInformation? {
+    return signatures.getOrNull(activeSignature)
+  }
 
-    companion object {
-        /** Create signature help with a single signature */
-        fun single(
-            label: String,
-            parameters: List<ParameterInformation> = emptyList(),
-            documentation: String? = null,
-            activeParameter: Int = 0,
-        ): SignatureHelp {
-            return SignatureHelp(
-                signatures =
-                    listOf(
-                        SignatureInformation(
-                            label = label,
-                            documentation = documentation,
-                            parameters = parameters,
-                        )
-                    ),
-                activeParameter = activeParameter,
-            )
-        }
+  /**
+   * Retrieves the active parameter info
+   *
+   * @return the parameter information
+   */
+  fun getActiveParameterInfo(): ParameterInformation? {
+    return getActiveSignatureInfo()?.parameters?.getOrNull(activeParameter)
+  }
+
+  /** Companion object Companion. */
+  companion object {
+
+    /**
+     * Performs the operation
+     *
+     * @param label the label text
+     * @param parameters the collection of parameters
+     * @param documentation the documentation text, or `null` if omitted
+     * @param activeParameter the numeric active parameter
+     * @return the signature help
+     */
+    fun single(
+        label: String,
+        parameters: List<ParameterInformation> = emptyList(),
+        documentation: String? = null,
+        activeParameter: Int = 0,
+    ): SignatureHelp {
+      return SignatureHelp(
+          signatures =
+              listOf(
+                  SignatureInformation(
+                      label = label,
+                      documentation = documentation,
+                      parameters = parameters,
+                  )
+              ),
+          activeParameter = activeParameter,
+      )
     }
+  }
 }
 
-/** Represents the signature of something callable */
+/** Data class SignatureInformation. */
 data class SignatureInformation(
-    /** The label of this signature */
     val label: String,
-
-    /** The human-readable doc-comment of this signature */
     val documentation: String? = null,
-
-    /** The parameters of this signature */
     val parameters: List<ParameterInformation> = emptyList(),
-
-    /** The index of the active parameter */
     val activeParameter: Int? = null,
 ) {
-    /** Get display text */
-    fun getDisplayText(): String {
-        return buildString {
-            append(label)
-            if (documentation != null) {
-                append("\n")
-                append(documentation)
-            }
-        }
+
+  /**
+   * Retrieves the display text
+   *
+   * @return the string
+   */
+  fun getDisplayText(): String {
+    return buildString {
+      append(label)
+      if (documentation != null) {
+        append("\n")
+        append(documentation)
+      }
     }
+  }
 }
 
-/** Represents a parameter of a callable-signature */
+/** Data class ParameterInformation. */
 data class ParameterInformation(
-    /** The label of this parameter */
     val label: String,
-
-    /** The human-readable doc-comment of this parameter */
     val documentation: String? = null,
 ) {
-    /** Get display text */
-    fun getDisplayText(): String {
-        return if (documentation != null) {
-            "$label: $documentation"
-        } else {
-            label
-        }
-    }
 
-    companion object {
-        /** Create a parameter with name and type */
-        fun create(
-            name: String,
-            type: String,
-            documentation: String? = null,
-        ): ParameterInformation {
-            return ParameterInformation(label = "$name: $type", documentation = documentation)
-        }
+  /**
+   * Retrieves the display text
+   *
+   * @return the string
+   */
+  fun getDisplayText(): String {
+    return if (documentation != null) {
+      "$label: $documentation"
+    } else {
+      label
     }
+  }
+
+  /** Companion object Companion. */
+  companion object {
+
+    /**
+     * Creates a new instance of
+     *
+     * @param name the name text
+     * @param type the type text
+     * @param documentation the documentation text, or `null` if omitted
+     * @return the parameter information
+     */
+    fun create(
+        name: String,
+        type: String,
+        documentation: String? = null,
+    ): ParameterInformation {
+      return ParameterInformation(label = "$name: $type", documentation = documentation)
+    }
+  }
 }

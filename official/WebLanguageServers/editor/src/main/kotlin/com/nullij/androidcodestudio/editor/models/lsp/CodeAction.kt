@@ -1,167 +1,217 @@
+/*
+ *  This file is part of ACSIDE.
+ *
+ *  ACSIDE is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  ACSIDE is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *   along with ACSIDE.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package com.nullij.androidcodestudio.editor.models.lsp
 
-/** A code action represents a change that can be performed in code */
+/**
+ * Data class CodeAction.
+ *
+ * @author nullij @ https://github.com/nullij
+ */
 data class CodeAction(
-    /** A short, human-readable, title for this code action */
     val title: String,
-
-    /** The kind of the code action */
     val kind: CodeActionKind? = null,
-
-    /** The diagnostics that this code action resolves */
     val diagnostics: List<Diagnostic> = emptyList(),
-
-    /** Marks this as a preferred action */
     val isPreferred: Boolean = false,
-
-    /** The workspace edit this code action performs */
     val edit: WorkspaceEdit? = null,
-
-    /** A command this code action executes */
     val command: Command? = null,
-
-    /** Marks that the code action cannot currently be applied */
     val disabled: Reason? = null,
-
-    /** Additional data for custom processing */
     val data: Any? = null,
 ) {
-    data class Reason(val reason: String)
 
-    companion object {
-        /** Create a quick fix action */
-        fun quickFix(
-            title: String,
-            diagnostic: Diagnostic,
-            edit: WorkspaceEdit,
-            isPreferred: Boolean = false,
-        ): CodeAction {
-            return CodeAction(
-                title = title,
-                kind = CodeActionKind.QUICK_FIX,
-                diagnostics = listOf(diagnostic),
-                edit = edit,
-                isPreferred = isPreferred,
-            )
-        }
+  /** Data class Reason. */
+  data class Reason(val reason: String)
 
-        /** Create a refactor action */
-        fun refactor(
-            title: String,
-            edit: WorkspaceEdit,
-            kind: CodeActionKind = CodeActionKind.REFACTOR,
-        ): CodeAction {
-            return CodeAction(title = title, kind = kind, edit = edit)
-        }
+  /** Companion object Companion. */
+  companion object {
 
-        /** Create a source action */
-        fun source(
-            title: String,
-            command: Command,
-            kind: CodeActionKind = CodeActionKind.SOURCE,
-        ): CodeAction {
-            return CodeAction(title = title, kind = kind, command = command)
-        }
+    /**
+     * Performs the operation
+     *
+     * @param title the title text
+     * @param diagnostic the diagnostic as a [Diagnostic]
+     * @param edit the [WorkspaceEdit] instance
+     * @param isPreferred whether is preferred is enabled
+     * @return the code action
+     */
+    fun quickFix(
+        title: String,
+        diagnostic: Diagnostic,
+        edit: WorkspaceEdit,
+        isPreferred: Boolean = false,
+    ): CodeAction {
+      return CodeAction(
+          title = title,
+          kind = CodeActionKind.QUICK_FIX,
+          diagnostics = listOf(diagnostic),
+          edit = edit,
+          isPreferred = isPreferred,
+      )
     }
+
+    /**
+     * Performs the operation
+     *
+     * @param title the title text
+     * @param edit the [WorkspaceEdit] instance
+     * @param kind the [CodeActionKind] instance
+     * @return the code action
+     */
+    fun refactor(
+        title: String,
+        edit: WorkspaceEdit,
+        kind: CodeActionKind = CodeActionKind.REFACTOR,
+    ): CodeAction {
+      return CodeAction(title = title, kind = kind, edit = edit)
+    }
+
+    /**
+     * Represents the source
+     *
+     * @param title the title text
+     * @param command the command as a [Command]
+     * @param kind the [CodeActionKind] instance
+     * @return the code action
+     */
+    fun source(
+        title: String,
+        command: Command,
+        kind: CodeActionKind = CodeActionKind.SOURCE,
+    ): CodeAction {
+      return CodeAction(title = title, kind = kind, command = command)
+    }
+  }
 }
 
-/** Code action kinds */
+/** Enum class CodeActionKind. */
 enum class CodeActionKind(val value: String) {
-    /** Empty kind */
-    EMPTY(""),
 
-    /** Base kind for quickfix actions */
-    QUICK_FIX("quickfix"),
+  /** Class EMPTY. */
+  EMPTY(""),
 
-    /** Base kind for refactoring actions */
-    REFACTOR("refactor"),
+  /** Class QUICK_FIX. */
+  QUICK_FIX("quickfix"),
 
-    /** Base kind for refactoring extraction actions */
-    REFACTOR_EXTRACT("refactor.extract"),
+  /** Class REFACTOR. */
+  REFACTOR("refactor"),
 
-    /** Base kind for refactoring inline actions */
-    REFACTOR_INLINE("refactor.inline"),
+  /** Class REFACTOR_EXTRACT. */
+  REFACTOR_EXTRACT("refactor.extract"),
 
-    /** Base kind for refactoring rewrite actions */
-    REFACTOR_REWRITE("refactor.rewrite"),
+  /** Class REFACTOR_INLINE. */
+  REFACTOR_INLINE("refactor.inline"),
 
-    /** Base kind for source actions */
-    SOURCE("source"),
+  /** Class REFACTOR_REWRITE. */
+  REFACTOR_REWRITE("refactor.rewrite"),
 
-    /** Base kind for organize imports source action */
-    SOURCE_ORGANIZE_IMPORTS("source.organizeImports"),
+  /** Class SOURCE. */
+  SOURCE("source"),
 
-    /** Base kind for fix all source action */
-    SOURCE_FIX_ALL("source.fixAll");
+  /** Class SOURCE_ORGANIZE_IMPORTS. */
+  SOURCE_ORGANIZE_IMPORTS("source.organizeImports"),
 
-    companion object {
-        fun fromValue(value: String): CodeActionKind? {
-            return values().find { it.value == value }
-        }
+  /** Class SOURCE_FIX_ALL. */
+  SOURCE_FIX_ALL("source.fixAll"),
+
+  /** Class SOURCE_REMOVE_UNUSED_IMPORTS. */
+  SOURCE_REMOVE_UNUSED_IMPORTS("source.removeUnusedImports"),
+
+  /** Class SOURCE_ADD_MISSING_IMPORTS. */
+  SOURCE_ADD_MISSING_IMPORTS("source.addMissingImports");
+
+  /** Companion object Companion. */
+  companion object {
+
+    /**
+     * Retrieves the value
+     *
+     * @param value the value text
+     * @return the code action kind
+     */
+    fun fromValue(value: String): CodeActionKind? {
+      return values().find { it.value == value }
     }
+  }
 }
 
-/** Represents a reference to a command */
+/** Data class Command. */
 data class Command(
-    /** Title of the command */
     val title: String,
-
-    /** The identifier of the actual command handler */
     val command: String,
-
-    /** Arguments that the command handler should be invoked with */
     val arguments: List<Any> = emptyList(),
 )
 
-/** A workspace edit represents changes to many resources managed in the workspace */
+/** Data class WorkspaceEdit. */
 data class WorkspaceEdit(
-    /** Holds changes to existing resources */
     val changes: Map<String, List<TextEdit>> = emptyMap(),
-
-    /** Document changes (more advanced than simple changes) */
     val documentChanges: List<TextDocumentEdit> = emptyList(),
 )
 
-/** Describes textual changes on a single text document */
+/** Data class TextDocumentEdit. */
 data class TextDocumentEdit(
-    /** The text document to change */
     val textDocument: VersionedTextDocumentIdentifier,
-
-    /** The edits to be applied */
     val edits: List<TextEdit>,
 )
 
-/** An identifier to denote a specific version of a text document */
+/** Data class VersionedTextDocumentIdentifier. */
 data class VersionedTextDocumentIdentifier(
-    /** The text document's URI */
     val uri: String,
-
-    /** The version number of this document */
     val version: Int?,
 )
 
-/** A textual edit applicable to a text document */
+/** Data class TextEdit. */
 data class TextEdit(
-    /** The range of the text document to be manipulated */
     val range: Range,
-
-    /** The string to be inserted */
     val newText: String,
 ) {
-    companion object {
-        /** Create an insert edit */
-        fun insert(position: Position, text: String): TextEdit {
-            return TextEdit(Range(position, position), text)
-        }
 
-        /** Create a delete edit */
-        fun delete(range: Range): TextEdit {
-            return TextEdit(range, "")
-        }
+  /** Companion object Companion. */
+  companion object {
 
-        /** Create a replace edit */
-        fun replace(range: Range, text: String): TextEdit {
-            return TextEdit(range, text)
-        }
+    /**
+     * Adds
+     *
+     * @param position the position as a [Position]
+     * @param text the text text
+     * @return the text edit
+     */
+    fun insert(position: Position, text: String): TextEdit {
+      return TextEdit(Range(position, position), text)
     }
+
+    /**
+     * Removes the specified
+     *
+     * @param range the range as a [Range]
+     * @return the text edit
+     */
+    fun delete(range: Range): TextEdit {
+      return TextEdit(range, "")
+    }
+
+    /**
+     * Sets
+     *
+     * @param range the range as a [Range]
+     * @param text the text text
+     * @return the text edit
+     */
+    fun replace(range: Range, text: String): TextEdit {
+      return TextEdit(range, text)
+    }
+  }
 }

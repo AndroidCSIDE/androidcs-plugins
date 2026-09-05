@@ -1,139 +1,346 @@
+/*
+ *  This file is part of ACSIDE.
+ *
+ *  ACSIDE is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  ACSIDE is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *   along with ACSIDE.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package com.nullij.androidcodestudio.editor.models.lsp
 
 /**
- * Language client interface for LSP operations Implement this interface to provide
- * language-specific features
+ * Class LanguageClient.
+ *
+ * @author nullij @ https://github.com/nullij
  */
 interface LanguageClient {
 
-    /** Get completion items at a specific position */
-    suspend fun getCompletions(
-        uri: String,
-        position: Position,
-        context: CompletionContext,
-    ): List<CompletionItem>
+  /**
+   * Retrieves the completionses
+   *
+   * This is a suspend function and can only be called from a coroutine.
+   *
+   * @param uri the uri text
+   * @param position the position as a [Position]
+   * @param context the [CompletionContext] instance
+   * @return a collection of completion items
+   */
+  suspend fun getCompletions(
+      uri: String,
+      position: Position,
+      context: CompletionContext,
+  ): List<CompletionItem>
 
-    /** Get hover information at a specific position */
-    suspend fun getHover(uri: String, position: Position): Hover?
+  /**
+   * Retrieves the hover
+   *
+   * This is a suspend function and can only be called from a coroutine.
+   *
+   * @param uri the uri text
+   * @param position the position as a [Position]
+   * @return the hover
+   */
+  suspend fun getHover(uri: String, position: Position): Hover?
 
-    /** Get signature help at a specific position */
-    suspend fun getSignatureHelp(uri: String, position: Position): SignatureHelp?
+  /**
+   * Retrieves the signature help
+   *
+   * This is a suspend function and can only be called from a coroutine.
+   *
+   * @param uri the uri text
+   * @param position the position as a [Position]
+   * @return the signature help
+   */
+  suspend fun getSignatureHelp(uri: String, position: Position): SignatureHelp?
 
-    /** Get document symbols (outline) */
-    suspend fun getDocumentSymbols(uri: String): List<DocumentSymbol>
+  /**
+   * Retrieves the document symbolses
+   *
+   * This is a suspend function and can only be called from a coroutine.
+   *
+   * @param uri the uri text
+   * @return a collection of document symbols
+   */
+  suspend fun getDocumentSymbols(uri: String): List<DocumentSymbol>
 
-    /** Get diagnostics (errors, warnings) for a document */
-    suspend fun getDiagnostics(uri: String, content: String): List<Diagnostic>
+  /**
+   * Retrieves the diagnosticses
+   *
+   * This is a suspend function and can only be called from a coroutine.
+   *
+   * @param uri the uri text
+   * @param content the content text
+   * @return a collection of diagnostics
+   */
+  suspend fun getDiagnostics(uri: String, content: String): List<Diagnostic>
 
-    /** Get code actions available for a range */
-    suspend fun getCodeActions(
-        uri: String,
-        range: Range,
-        context: CodeActionContext,
-    ): List<CodeAction>
+  /** Registers a listener for pushed diagnostics when the client supports it. */
+  fun addDiagnosticsListener(
+      uri: String,
+      listener: (List<Diagnostic>) -> Unit,
+  ): (() -> Unit)? = null
 
-    /** Find definition of symbol at position */
-    suspend fun getDefinition(uri: String, position: Position): List<Location>
+  /**
+   * Retrieves the code actionses
+   *
+   * This is a suspend function and can only be called from a coroutine.
+   *
+   * @param uri the uri text
+   * @param range the range as a [Range]
+   * @param context the [CodeActionContext] instance
+   * @return a collection of code actions
+   */
+  suspend fun getCodeActions(
+      uri: String,
+      range: Range,
+      context: CodeActionContext,
+  ): List<CodeAction>
 
-    /** Find references to symbol at position */
-    suspend fun getReferences(uri: String, position: Position): List<Location>
+  /**
+   * Retrieves the definitions
+   *
+   * This is a suspend function and can only be called from a coroutine.
+   *
+   * @param uri the uri text
+   * @param position the position as a [Position]
+   * @return a collection of locations
+   */
+  suspend fun getDefinition(uri: String, position: Position): List<Location>
 
-    /** Format document */
-    suspend fun formatDocument(uri: String, content: String): List<TextEdit>
+  /**
+   * Retrieves the referenceses
+   *
+   * This is a suspend function and can only be called from a coroutine.
+   *
+   * @param uri the uri text
+   * @param position the position as a [Position]
+   * @return a collection of locations
+   */
+  suspend fun getReferences(uri: String, position: Position): List<Location>
 
-    /** Format range in document */
-    suspend fun formatRange(uri: String, range: Range, content: String): List<TextEdit>
+  /**
+   * Formats and displays the documents
+   *
+   * This is a suspend function and can only be called from a coroutine.
+   *
+   * @param uri the uri text
+   * @param content the content text
+   * @return a collection of text edits
+   */
+  suspend fun formatDocument(uri: String, content: String): List<TextEdit>
 
-    /** Rename symbol at position */
-    suspend fun rename(uri: String, position: Position, newName: String): WorkspaceEdit?
+  /**
+   * Removes the specified unused imports
+   *
+   * This is a suspend function and can only be called from a coroutine.
+   *
+   * @param content the content text
+   * @return the string
+   */
+  suspend fun removeUnusedImports(content: String): String? = null
 
-    /** Get document highlights (occurrences) of symbol at position */
-    suspend fun getDocumentHighlights(uri: String, position: Position): List<DocumentHighlight>
+  /**
+   * Formats and displays the ranges
+   *
+   * This is a suspend function and can only be called from a coroutine.
+   *
+   * @param uri the uri text
+   * @param range the range as a [Range]
+   * @param content the content text
+   * @return a collection of text edits
+   */
+  suspend fun formatRange(uri: String, range: Range, content: String): List<TextEdit>
 
-    /** Get inlay hints for a range in the document */
-    suspend fun getInlayHints(uri: String, range: Range): List<InlayHint>
+  /**
+   * Performs the operation
+   *
+   * This is a suspend function and can only be called from a coroutine.
+   *
+   * @param uri the uri text
+   * @param position the position as a [Position]
+   * @param newName the new name text
+   * @return the workspace edit
+   */
+  suspend fun rename(uri: String, position: Position, newName: String): WorkspaceEdit?
 
-    /**
-     * Organize imports for the document. Sends a codeAction request with kind
-     * [CodeActionKind.SOURCE_ORGANIZE_IMPORTS] and returns the resulting text edits to apply.
-     */
-    suspend fun organizeImports(uri: String): List<TextEdit>
+  /**
+   * Retrieves the document highlightses
+   *
+   * This is a suspend function and can only be called from a coroutine.
+   *
+   * @param uri the uri text
+   * @param position the position as a [Position]
+   * @return a collection of document highlights
+   */
+  suspend fun getDocumentHighlights(uri: String, position: Position): List<DocumentHighlight>
 
-    /**
-     * Execute a server-side command (e.g. `jetbrains.kotlin.completion.apply`). The server
-     * typically responds by sending a `workspace/applyEdit` request back. Returns true if the
-     * command was sent successfully. Default is a no-op — only override in clients that support
-     * workspace/executeCommand.
-     */
-    suspend fun executeCommand(command: LspCommand): Boolean = false
+  /**
+   * Retrieves the inlay hintses
+   *
+   * This is a suspend function and can only be called from a coroutine.
+   *
+   * @param uri the uri text
+   * @param range the range as a [Range]
+   * @return a collection of inlay hints
+   */
+  suspend fun getInlayHints(uri: String, range: Range): List<InlayHint>
 
-    /**
-     * Execute a command and capture the resulting workspace/applyEdit response. Returns only the
-     * import-line edits from the response, or empty list on timeout.
-     */
-    suspend fun executeCommandForImportEdits(command: LspCommand, uri: String): List<TextEdit> =
-        emptyList()
+  /**
+   * Retrieves the folding rangeses
+   *
+   * This is a suspend function and can only be called from a coroutine.
+   *
+   * @param uri the uri text
+   * @param content the content text
+   * @return a collection of folding ranges
+   */
+  suspend fun getFoldingRanges(uri: String, content: String): List<FoldingRange> = emptyList()
+
+  /**
+   * Performs the importses operation
+   *
+   * This is a suspend function and can only be called from a coroutine.
+   *
+   * @param uri the uri text
+   * @return a collection of text edits
+   */
+  suspend fun organizeImports(uri: String): List<TextEdit>
+
+  /**
+   * Retrieves the import choiceses
+   *
+   * This is a suspend function and can only be called from a coroutine.
+   *
+   * @param uri the uri text
+   * @return a collection of import choice groups
+   */
+  suspend fun getImportChoices(uri: String): List<ImportChoiceGroup> = emptyList()
+
+  /**
+   * Processes the chosen importses
+   *
+   * This is a suspend function and can only be called from a coroutine.
+   *
+   * @param uri the uri text
+   * @param chosen the collection of chosen
+   * @return a collection of text edits
+   */
+  suspend fun applyChosenImports(uri: String, chosen: List<ImportCandidate>): List<TextEdit> =
+      emptyList()
+
+  /**
+   * Processes the command
+   *
+   * This is a suspend function and can only be called from a coroutine.
+   *
+   * @param command the [LspCommand] instance
+   * @return `true` if the operation succeeded or condition is met; `false` otherwise
+   */
+  suspend fun executeCommand(command: LspCommand): Boolean = false
+
+  /**
+   * Processes the command for import editses
+   *
+   * This is a suspend function and can only be called from a coroutine.
+   *
+   * @param command the [LspCommand] instance
+   * @param uri the uri text
+   * @return a collection of text edits
+   */
+  suspend fun executeCommandForImportEdits(command: LspCommand, uri: String): List<TextEdit> =
+      emptyList()
 }
 
-/** Context for completion requests */
-data class CompletionContext(
-    /** How the completion was triggered */
-    val triggerKind: CompletionTriggerKind,
+/** Class WorkspaceEditApplierSink. */
+interface WorkspaceEditApplierSink {
 
-    /** The trigger character (if triggered by a character) */
+  /**
+   * Sets the workspace edit applier
+   *
+   * @param applier the callback function for applier, or `null` if omitted
+   */
+  fun setWorkspaceEditApplier(applier: ((WorkspaceEdit) -> Unit)?)
+}
+
+/** Data class ImportCandidate. */
+data class ImportCandidate(val title: String, val packagePath: String, val commandData: String)
+
+/** Data class ImportChoiceGroup. */
+data class ImportChoiceGroup(val symbol: String, val candidates: List<ImportCandidate>)
+
+/** Data class CompletionContext. */
+data class CompletionContext(
+    val triggerKind: CompletionTriggerKind,
     val triggerCharacter: String? = null,
 )
 
-/** How a completion was triggered */
+/** Enum class CompletionTriggerKind. */
 enum class CompletionTriggerKind(val value: Int) {
-    /** Completion was triggered by typing an identifier */
-    INVOKED(1),
 
-    /** Completion was triggered by a trigger character */
-    TRIGGER_CHARACTER(2),
+  /** Class INVOKED. */
+  INVOKED(1),
 
-    /** Completion was re-triggered as the current completion list is incomplete */
-    TRIGGER_FOR_INCOMPLETE_COMPLETIONS(3);
+  /** Class TRIGGER_CHARACTER. */
+  TRIGGER_CHARACTER(2),
 
-    companion object {
-        fun fromValue(value: Int): CompletionTriggerKind? {
-            return values().find { it.value == value }
-        }
-    }
+  /** Class TRIGGER_FOR_INCOMPLETE_COMPLETIONS. */
+  TRIGGER_FOR_INCOMPLETE_COMPLETIONS(3);
+
+  /** Companion object Companion. */
+  companion object {
+
+    /**
+     * Retrieves the value
+     *
+     * @param value the numeric value
+     * @return the completion trigger kind
+     */
+    fun fromValue(value: Int): CompletionTriggerKind? = values().find { it.value == value }
+  }
 }
 
-/** Context for code action requests */
+/** Data class CodeActionContext. */
 data class CodeActionContext(
-    /** The diagnostics in the range */
     val diagnostics: List<Diagnostic>,
-
-    /** Requested kind of actions to return */
     val only: List<CodeActionKind> = emptyList(),
 )
 
-/** A document highlight is a range inside a text document which deserves special attention */
+/** Data class DocumentHighlight. */
 data class DocumentHighlight(
-    /** The range this highlight applies to */
     val range: Range,
-
-    /** The highlight kind */
     val kind: DocumentHighlightKind = DocumentHighlightKind.TEXT,
 )
 
-/** Document highlight kind */
+/** Enum class DocumentHighlightKind. */
 enum class DocumentHighlightKind(val value: Int) {
-    /** A textual occurrence */
-    TEXT(1),
 
-    /** Read-access of a symbol */
-    READ(2),
+  /** Class TEXT. */
+  TEXT(1),
 
-    /** Write-access of a symbol */
-    WRITE(3);
+  /** Class READ. */
+  READ(2),
 
-    companion object {
-        fun fromValue(value: Int): DocumentHighlightKind? {
-            return values().find { it.value == value }
-        }
-    }
+  /** Class WRITE. */
+  WRITE(3);
+
+  /** Companion object Companion. */
+  companion object {
+
+    /**
+     * Retrieves the value
+     *
+     * @param value the numeric value
+     * @return the document highlight kind
+     */
+    fun fromValue(value: Int): DocumentHighlightKind? = values().find { it.value == value }
+  }
 }

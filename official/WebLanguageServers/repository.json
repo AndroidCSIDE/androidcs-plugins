@@ -10,9 +10,9 @@
   "latestVersion": "1.0",
   "minAcsVersion": "1.0.0",
   "downloadUrl": "https://github.com/AndroidCSIDE/androidcs-plugins/raw/refs/heads/acside/official/WebLanguageServers/WebLanguageServers.acp",
-  "checksum": "170d1e43c794b145f4d85e4108f3f3a8f5e4b05f01221b58913cf30d32a625b6",
-  "size": 6023753,
-  "lastUpdated": "2026-08-23 14:36:56",
+  "checksum": "15f7625d949b433775bb67d7893998443a6ed00c2a1274dc33b3551fd0cb81c8",
+  "size": 4595785,
+  "lastUpdated": "2026-09-05 17:31:08",
   "tags": [
     "intelligence",
     "language_servers",
