@@ -10,9 +10,9 @@
   "latestVersion": "1.0",
   "minAcsVersion": "1.0.0",
   "downloadUrl": "https://github.com/AndroidCSIDE/androidcs-plugins/raw/refs/heads/acside/official/PythonLanguageServer/PythonLanguageServer.acp",
-  "checksum": "47eeb386476db151f68c697cd7a34a17c6451dd82aec66a80fbb98f341376095",
-  "size": 6009561,
-  "lastUpdated": "2026-10-09 12:47:39",
+  "checksum": "9c1563620e1651fe636ead809e784f94d376981fc1c20827c50e085c37f835d1",
+  "size": 4605657,
+  "lastUpdated": "2026-10-09 15:48:01",
   "tags": [
     "intelligence",
     "language_servers",
