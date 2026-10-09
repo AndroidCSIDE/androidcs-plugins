@@ -18,6 +18,12 @@ data class Diagnostic(
     
     /** The diagnostic's message */
     val message: String,
+
+    /**
+     * When true, the language server reports that quick-fix code actions may exist
+     * for this diagnostic (LSP `fixAvailable`).
+     */
+    val fixAvailable: Boolean? = null,
     
     /** Additional metadata about the diagnostic */
     val tags: List<DiagnosticTag> = emptyList(),
